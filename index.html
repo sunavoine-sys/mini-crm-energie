@@ -1,68 +1,75 @@
 <!DOCTYPE html>
-<html>
+<html lang="fr">
 <head>
   <meta charset="UTF-8" />
-  <title>CRM Documents</title>
-  <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+  <title>Documents</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
-    body {
-      font-family: Arial, sans-serif;
-      background: #f3f4f6;
-      padding: 40px;
-    }
-    h1 { margin-bottom: 24px; }
-    .row { display: flex; gap: 12px; align-items: center; margin-bottom: 20px; }
-    button { padding: 10px 16px; cursor: pointer; }
-    .msg {
-      margin: 16px 0;
-      padding: 12px 14px;
-      border-radius: 10px;
-      background: white;
-      border: 1px solid #ddd;
-      min-height: 24px;
-    }
+    body { font-family: Arial; padding: 20px; }
     .card {
-      background: white;
-      padding: 14px;
-      margin-bottom: 10px;
-      border-radius: 10px;
+      border: 1px solid #ddd;
+      padding: 10px;
+      margin-top: 10px;
       display: flex;
       justify-content: space-between;
       align-items: center;
-      border: 1px solid #ddd;
     }
+    button { margin-left: 5px; }
   </style>
 </head>
 <body>
-  <h1>📂 Documents</h1>
 
-  <div class="row">
-    <input type="file" id="fileInput" />
-    <button id="uploadBtn">Uploader</button>
-  </div>
+  <h1>📁 Documents</h1>
 
-  <div id="msg" class="msg">Prêt.</div>
-  <div id="list"></div>
+  <input type="file" id="fileInput" />
+  <button id="uploadBtn">Uploader</button>
+
+  <p id="msg"></p>
+
+  <div id="fileList"></div>
 
   <script>
-    const msg = document.getElementById("msg");
-    const listEl = document.getElementById("list");
-    const inputEl = document.getElementById("fileInput");
-    const uploadBtn = document.getElementById("uploadBtn");
+    const SUPABASE_URL = "https://bbghzarbawbugrmwlxjj.supabase.co";
+    const SUPABASE_ANON_KEY = "sb_publishable_Rfr6TeYwOI3jIseYVT70BQ_fYCgCD3p";
 
-    function setMsg(text) {
-      msg.textContent = text;
+    const client = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    const fileInput = document.getElementById("fileInput");
+    const uploadBtn = document.getElementById("uploadBtn");
+    const listEl = document.getElementById("fileList");
+    const msg = document.getElementById("msg");
+
+    function setMsg(t) {
+      msg.textContent = t;
     }
 
-    const { createClient } = supabase;
-    const client = createClient(
-      "https://bbghzarbawbugrmwlxjj.supabase.co",
-      "sb_publishable_Rfr6TeYwOI3jIseYVT70BQ_fYCgCD3p"
-    );
+    uploadBtn.addEventListener("click", async () => {
+      const file = fileInput.files[0];
+      if (!file) return setMsg("Choisis un fichier.");
+
+      setMsg("Upload en cours...");
+
+      const filePath = "files/" + Date.now() + "-" + file.name;
+
+      const { error } = await client.storage
+        .from("Documents")
+        .upload(filePath, file);
+
+      if (error) {
+        setMsg("Erreur upload: " + error.message);
+        return;
+      }
+
+      setMsg("Upload réussi !");
+      fileInput.value = "";
+      loadFiles();
+    });
 
     async function loadFiles() {
       setMsg("Chargement des fichiers...");
-      const { data, error } = await client.storage.from("Documents").list("files");
+      const { data, error } = await client.storage
+        .from("Documents")
+        .list("files");
 
       if (error) {
         setMsg("Erreur liste: " + error.message);
@@ -72,76 +79,67 @@
       listEl.innerHTML = "";
 
       if (!data || data.length === 0) {
-        setMsg("Aucun fichier pour le moment.");
+        setMsg("Aucun fichier.");
         return;
       }
 
       setMsg("Fichiers chargés.");
 
       data.forEach((file) => {
-        const { data: publicData } = client.storage
-          .from("Documents")
-          .getPublicUrl("files/" + file.name);
-
         const div = document.createElement("div");
         div.className = "card";
+
         div.innerHTML = `
           <span>${file.name}</span>
           <div>
-            <button data-open="${publicData.publicUrl}">Ouvrir</button>
+            <button data-open="${file.name}">Ouvrir</button>
             <button data-delete="${file.name}">Supprimer</button>
           </div>
         `;
+
         listEl.appendChild(div);
       });
 
-      listEl.querySelectorAll("[data-open]").forEach((btn) => {
-        btn.addEventListener("click", () => {
-          window.open(btn.dataset.open, "_blank");
+      // OUVRIR
+      document.querySelectorAll("[data-open]").forEach((btn) => {
+        btn.addEventListener("click", async () => {
+          const name = btn.dataset.open;
+
+          const { data, error } = await client.storage
+            .from("Documents")
+            .createSignedUrl("files/" + name, 3600);
+
+          if (error) {
+            setMsg("Erreur ouverture: " + error.message);
+            return;
+          }
+
+          window.open(data.signedUrl, "_blank");
         });
       });
 
-      listEl.querySelectorAll("[data-delete]").forEach((btn) => {
+      // DELETE
+      document.querySelectorAll("[data-delete]").forEach((btn) => {
         btn.addEventListener("click", async () => {
           const name = btn.dataset.delete;
-          setMsg("Suppression de " + name + "...");
-          const { error } = await client.storage.from("Documents").remove(["files/" + name]);
+
+          const { error } = await client.storage
+            .from("Documents")
+            .remove(["files/" + name]);
+
           if (error) {
             setMsg("Erreur suppression: " + error.message);
             return;
           }
+
           setMsg("Fichier supprimé.");
           loadFiles();
         });
       });
     }
 
-    uploadBtn.addEventListener("click", async () => {
-      const file = inputEl.files[0];
-
-      if (!file) {
-        setMsg("Choisis un fichier d'abord.");
-        return;
-      }
-
-      setMsg("Upload en cours...");
-
-      const path = "files/" + Date.now() + "-" + file.name;
-      const { error } = await client.storage.from("Documents").upload(path, file, {
-        upsert: true,
-      });
-
-      if (error) {
-        setMsg("Erreur upload: " + error.message);
-        return;
-      }
-
-      setMsg("Upload OK.");
-      inputEl.value = "";
-      loadFiles();
-    });
-
     loadFiles();
   </script>
+
 </body>
 </html>
