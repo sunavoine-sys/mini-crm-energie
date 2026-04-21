@@ -7,25 +7,21 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
     :root {
-      --bg: #070b14;
-      --bg-2: #0b1220;
       --panel: rgba(14, 20, 34, 0.78);
       --panel-2: rgba(19, 28, 46, 0.88);
       --line: rgba(148, 163, 184, 0.18);
       --text: #e5eefc;
       --muted: #8ea2c9;
       --cyan: #4ef2ff;
-      --blue: #4c8dff;
       --violet: #9a6cff;
-      --green: #4dffb8;
       --red: #ff647c;
-      --yellow: #ffd84d;
       --shadow: 0 16px 60px rgba(0, 0, 0, 0.45);
       --radius: 22px;
     }
 
     * { box-sizing: border-box; }
     html { scroll-behavior: smooth; }
+
     body {
       margin: 0;
       font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
@@ -89,6 +85,12 @@
       margin: 0;
       font-size: 22px;
       letter-spacing: 0.01em;
+      background: linear-gradient(90deg, #fff, var(--cyan), #fff, var(--violet), #fff);
+      background-size: 220% auto;
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+      animation: shimmer 6s linear infinite;
     }
 
     .brand p {
@@ -170,16 +172,8 @@
       line-height: 1.45;
     }
 
-    .grid {
-      display: grid;
-      gap: 12px;
-    }
-
-    .grid-2 {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 12px;
-    }
+    .grid { display: grid; gap: 12px; }
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 
     label {
       display: block;
@@ -201,15 +195,16 @@
       font-size: 14px;
       outline: none;
       transition: 0.2s ease;
-      box-shadow: inset 0 0 0 1px transparent;
     }
 
     input::placeholder, textarea::placeholder { color: #7b8daf; }
+
     input:focus, select:focus, textarea:focus {
       border-color: rgba(78,242,255,0.52);
       box-shadow: 0 0 0 4px rgba(78,242,255,0.1), 0 0 24px rgba(78,242,255,0.12);
       transform: translateY(-1px);
     }
+
     select option { color: #111827; }
     textarea { min-height: 100px; resize: vertical; }
 
@@ -228,8 +223,6 @@
       font-weight: 800;
       cursor: pointer;
       transition: 0.18s ease;
-      position: relative;
-      overflow: hidden;
     }
 
     button:hover { transform: translateY(-1px) scale(1.01); }
@@ -380,7 +373,7 @@
       margin-bottom: 14px;
     }
 
-    .tab-btn {
+    .tab-switch {
       padding: 10px 13px;
       border-radius: 999px;
       background: rgba(255,255,255,0.04);
@@ -392,11 +385,41 @@
       transition: 0.18s ease;
     }
 
-    .tab-btn.active {
+    .tab-switch.active {
       color: #08111f;
       background: linear-gradient(135deg, var(--cyan), #aefbff);
       border-color: transparent;
       box-shadow: 0 10px 24px rgba(78,242,255,0.2);
+    }
+
+    .tag-btn {
+      padding: 10px 13px;
+      border-radius: 999px;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.08);
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 800;
+      cursor: pointer;
+      transition: 0.18s ease;
+    }
+
+    .tag-btn.active {
+      color: #08111f;
+      background: linear-gradient(135deg, var(--cyan), #aefbff);
+      border-color: transparent;
+      box-shadow: 0 10px 24px rgba(78,242,255,0.2);
+    }
+
+    .tag-chip {
+      display: inline-block;
+      padding: 9px 12px;
+      border-radius: 999px;
+      background: linear-gradient(135deg, rgba(78,242,255,0.15), rgba(154,108,255,0.14));
+      border: 1px solid rgba(78,242,255,0.18);
+      font-size: 12px;
+      font-weight: 800;
+      color: #dffcff;
     }
 
     .tab-panel.hidden { display: none; }
@@ -481,9 +504,7 @@
       background: rgba(255,255,255,0.03);
     }
 
-    .empty-state h3 {
-      margin-bottom: 8px;
-    }
+    .empty-state h3 { margin-bottom: 8px; }
 
     .floating-orb {
       position: fixed;
@@ -499,15 +520,6 @@
 
     .orb-a { top: 120px; right: 4%; background: var(--cyan); }
     .orb-b { bottom: 80px; left: 2%; background: var(--violet); animation-delay: -3s; }
-
-    .shine-text {
-      background: linear-gradient(90deg, #fff, var(--cyan), #fff, var(--violet), #fff);
-      background-size: 220% auto;
-      -webkit-background-clip: text;
-      background-clip: text;
-      color: transparent;
-      animation: shimmer 6s linear infinite;
-    }
 
     .modal-backdrop {
       position: fixed;
@@ -579,7 +591,7 @@
     <div class="brand">
       <div class="brand-badge">DM</div>
       <div>
-        <h1 class="shine-text">Dynamic Makers Sales</h1>
+        <h1>Dynamic Makers Sales</h1>
         <p>CRM énergie nouvelle génération</p>
       </div>
     </div>
@@ -607,6 +619,13 @@
 
     <div class="right-col">
       <div class="panel">
+        <div id="selectedEmpty" class="empty-state">
+          <div>
+            <h3>Sélectionne un client</h3>
+            <div class="muted">Clique sur une fiche à gauche pour afficher les infos ici.</div>
+          </div>
+        </div>
+
         <div id="selectedWrap" class="hidden">
           <div class="panel-header">
             <div>
@@ -636,13 +655,13 @@
 
           <div style="margin-top:16px;">
             <h3 style="margin-bottom:10px;">Tags dossier</h3>
-            <div id="tagChips" class="section-tabs" style="margin-bottom:14px;"></div>
+            <div id="tagChips" class="section-tabs"></div>
           </div>
 
           <div class="section-tabs" style="margin-top:6px;">
-            <button class="tab-btn active" data-tab="infos">Infos</button>
-            <button class="tab-btn" data-tab="documents">Documents</button>
-            <button class="tab-btn" data-tab="notes">Notes</button>
+            <button class="tab-switch active" data-tab="infos">Infos</button>
+            <button class="tab-switch" data-tab="documents">Documents</button>
+            <button class="tab-switch" data-tab="notes">Notes</button>
           </div>
 
           <div id="tab_infos" class="tab-panel">
@@ -853,19 +872,19 @@
 
         <div>
           <label>Notes</label>
-            <textarea id="notes"></textarea>
-          </div>
+          <textarea id="notes"></textarea>
+        </div>
 
-          <div>
-            <label>Tags dossier</label>
-            <div id="tagEditor" class="section-tabs">
-              <button type="button" class="tab-btn" data-tag="En attente de facture">En attente de facture</button>
-              <button type="button" class="tab-btn" data-tag="Factures reçues">Factures reçues</button>
-              <button type="button" class="tab-btn" data-tag="ACD signé">ACD signé</button>
-              <button type="button" class="tab-btn" data-tag="Offre placée">Offre placée</button>
-              <button type="button" class="tab-btn" data-tag="Contrat signé">Contrat signé</button>
-            </div>
-            <input id="client_tags" class="hidden" />
+        <div>
+          <label>Tags dossier</label>
+          <div id="tagEditor" class="section-tabs">
+            <button type="button" class="tag-btn" data-tag="En attente de facture">En attente de facture</button>
+            <button type="button" class="tag-btn" data-tag="Factures reçues">Factures reçues</button>
+            <button type="button" class="tag-btn" data-tag="ACD signé">ACD signé</button>
+            <button type="button" class="tag-btn" data-tag="Offre placée">Offre placée</button>
+            <button type="button" class="tag-btn" data-tag="Contrat signé">Contrat signé</button>
+          </div>
+          <input id="client_tags" class="hidden" />
         </div>
 
         <div>
@@ -885,6 +904,8 @@
   <script>
     const SUPABASE_URL = "https://bbghzarbawbugrmwlxjj.supabase.co";
     const SUPABASE_ANON_KEY = "sb_publishable_Rfr6TeYwOI3jIseYVT70BQ_fYCgCD3p";
+    const CLIENT_TAGS_KEY = "crm_client_tags_v2";
+
     const clientDb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
     let clients = [];
@@ -897,6 +918,31 @@
     function setDocMsg(t) { $("docMsg").textContent = t; }
     function setSidebarMsg(t) { $("sidebarMsg").textContent = t; }
 
+    function getStoredTagsMap() {
+      try {
+        return JSON.parse(localStorage.getItem(CLIENT_TAGS_KEY) || "{}");
+      } catch {
+        return {};
+      }
+    }
+
+    function getClientTags(clientId) {
+      const map = getStoredTagsMap();
+      return Array.isArray(map[clientId]) ? map[clientId] : [];
+    }
+
+    function saveClientTags(clientId, tags) {
+      const map = getStoredTagsMap();
+      map[clientId] = tags;
+      localStorage.setItem(CLIENT_TAGS_KEY, JSON.stringify(map));
+    }
+
+    function removeClientTags(clientId) {
+      const map = getStoredTagsMap();
+      delete map[clientId];
+      localStorage.setItem(CLIENT_TAGS_KEY, JSON.stringify(map));
+    }
+
     function openModal(mode = "create") {
       $("clientModalBackdrop").classList.add("show");
       $("modalTitle").textContent = mode === "edit" ? "Modifier le client" : "Nouveau client";
@@ -904,6 +950,47 @@
 
     function closeModal() {
       $("clientModalBackdrop").classList.remove("show");
+    }
+
+    function parseTags(value) {
+      return (value || "")
+        .split(",")
+        .map(t => t.trim())
+        .filter(Boolean);
+    }
+
+    function refreshTagEditor() {
+      const selected = parseTags($("client_tags").value);
+      document.querySelectorAll("#tagEditor .tag-btn").forEach(btn => {
+        btn.classList.toggle("active", selected.includes(btn.dataset.tag));
+      });
+    }
+
+    function toggleEditorTag(tag) {
+      const current = parseTags($("client_tags").value);
+      const next = current.includes(tag)
+        ? current.filter(t => t !== tag)
+        : [...current, tag];
+      $("client_tags").value = next.join(", ");
+      refreshTagEditor();
+    }
+
+    function renderClientTags(client) {
+      const wrap = $("tagChips");
+      wrap.innerHTML = "";
+      const tags = getClientTags(client.id);
+
+      if (!tags.length) {
+        wrap.innerHTML = '<span class="muted">Aucun tag pour ce dossier.</span>';
+        return;
+      }
+
+      tags.forEach(tag => {
+        const chip = document.createElement("span");
+        chip.className = "tag-chip";
+        chip.textContent = tag;
+        wrap.appendChild(chip);
+      });
     }
 
     function resetForm() {
@@ -954,6 +1041,7 @@
 
     async function loadClients(selectAfter = null) {
       setSidebarMsg("Chargement des clients...");
+
       const { data, error } = await clientDb
         .from("clients")
         .select("*")
@@ -966,14 +1054,16 @@
 
       clients = data || [];
       $("clientCountBadge").textContent = String(clients.length);
-      renderClientList();
 
       if (selectAfter) {
         selectedClientId = selectAfter;
+      } else if (!selectedClientId && clients.length) {
+        selectedClientId = clients[0].id;
       } else if (selectedClientId && !clients.find(c => c.id === selectedClientId)) {
-        selectedClientId = null;
+        selectedClientId = clients.length ? clients[0].id : null;
       }
 
+      renderClientList();
       renderSelectedClient();
       setSidebarMsg("Clients chargés.");
     }
@@ -995,6 +1085,8 @@
       }
 
       filtered.forEach(c => {
+        const tags = getClientTags(c.id).slice(0, 2);
+
         const div = document.createElement("div");
         div.className = "client-card" + (selectedClientId === c.id ? " active" : "");
         div.innerHTML = `
@@ -1004,6 +1096,9 @@
           </div>
           <div class="muted" style="margin-top:6px;">${[c.first_name, c.last_name].filter(Boolean).join(" ") || "Pas de contact"}</div>
           <div class="muted" style="margin-top:8px;">${c.supplier || "Pas de fournisseur"}</div>
+          <div style="margin-top:10px; display:flex; gap:6px; flex-wrap:wrap;">
+            ${tags.map(tag => `<span class="badge">${tag}</span>`).join("")}
+          </div>
         `;
         div.addEventListener("click", () => {
           selectedClientId = c.id;
@@ -1042,51 +1137,12 @@
       $("annual_budget").value = c.annual_budget || "";
       $("notes").value = c.notes || "";
       $("acd_signed").checked = !!c.acd_signed;
-      $("client_tags").value = c.client_tags || "";
+      $("client_tags").value = getClientTags(c.id).join(", ");
       refreshTagEditor();
       updateSupplierOther();
       updateContractFields();
       setMsg("Client chargé dans le formulaire.");
       openModal("edit");
-    }
-
-    function parseTags(value) {
-      return (value || "")
-        .split(",")
-        .map(t => t.trim())
-        .filter(Boolean);
-    }
-
-    function refreshTagEditor() {
-      const selected = parseTags($("client_tags").value);
-      document.querySelectorAll('#tagEditor [data-tag]').forEach(btn => {
-        btn.classList.toggle('active', selected.includes(btn.dataset.tag));
-      });
-    }
-
-    function toggleEditorTag(tag) {
-      const current = parseTags($("client_tags").value);
-      const next = current.includes(tag)
-        ? current.filter(t => t !== tag)
-        : [...current, tag];
-      $("client_tags").value = next.join(', ');
-      refreshTagEditor();
-    }
-
-    function renderClientTags(c) {
-      const wrap = $("tagChips");
-      wrap.innerHTML = "";
-      const tags = parseTags(c.client_tags);
-      if (!tags.length) {
-        wrap.innerHTML = '<span class="muted">Aucun tag pour ce dossier.</span>';
-        return;
-      }
-      tags.forEach(tag => {
-        const chip = document.createElement('span');
-        chip.className = 'tab-btn active';
-        chip.textContent = tag;
-        wrap.appendChild(chip);
-      });
     }
 
     function renderSelectedClient() {
@@ -1096,7 +1152,6 @@
         $("selectedEmpty").classList.remove("hidden");
         $("selectedWrap").classList.add("hidden");
         $("docList").innerHTML = "";
-        setDocMsg("Sélectionne un client pour gérer ses documents.");
         $("previewWrap").classList.add("hidden");
         $("previewFrame").src = "about:blank";
         return;
@@ -1104,6 +1159,7 @@
 
       $("selectedEmpty").classList.add("hidden");
       $("selectedWrap").classList.remove("hidden");
+
       $("selectedTitle").textContent = c.company || "Client";
       $("selectedSubtitle").textContent = [c.first_name, c.last_name, c.email].filter(Boolean).join(" • ");
 
@@ -1118,8 +1174,18 @@
       $("sum_contract").textContent = contractLabel;
       $("notesBox").textContent = c.notes || "Aucune note.";
       renderClientTags(c);
-      $("infoBoxA").innerHTML = `<strong>Contact</strong><br>${[c.first_name, c.last_name].filter(Boolean).join(" ") || "-"}<br><br><strong>Email</strong><br>${c.email || "-"}<br><br><strong>Téléphone</strong><br>${c.phone || "-"}`;
-      $("infoBoxB").innerHTML = `<strong>Adresse</strong><br>${c.address || "-"}<br><br><strong>PDL</strong><br>${c.pdl_number || "-"}<br><br><strong>Budget annuel</strong><br>${c.annual_budget || "-"}`;
+
+      $("infoBoxA").innerHTML = `
+        <strong>Contact</strong><br>${[c.first_name, c.last_name].filter(Boolean).join(" ") || "-"}
+        <br><br><strong>Email</strong><br>${c.email || "-"}
+        <br><br><strong>Téléphone</strong><br>${c.phone || "-"}
+      `;
+
+      $("infoBoxB").innerHTML = `
+        <strong>Adresse</strong><br>${c.address || "-"}
+        <br><br><strong>PDL</strong><br>${c.pdl_number || "-"}
+        <br><br><strong>Budget annuel</strong><br>${c.annual_budget || "-"}
+      `;
 
       loadDocuments(c.id);
     }
@@ -1132,7 +1198,6 @@
       }
 
       const payload = {
-        client_tags: $("client_tags").value.trim(),
         company,
         first_name: $("first_name").value.trim(),
         last_name: $("last_name").value.trim(),
@@ -1162,12 +1227,15 @@
       };
 
       setMsg("Enregistrement...");
+
       if (editingId) {
         const { error } = await clientDb.from("clients").update(payload).eq("id", editingId);
         if (error) {
           setMsg("Erreur modification client: " + error.message);
           return;
         }
+
+        saveClientTags(editingId, parseTags($("client_tags").value));
         selectedClientId = editingId;
         await loadClients(editingId);
         closeModal();
@@ -1178,6 +1246,8 @@
           setMsg("Erreur création client: " + error.message);
           return;
         }
+
+        saveClientTags(data.id, parseTags($("client_tags").value));
         selectedClientId = data.id;
         await loadClients(data.id);
         closeModal();
@@ -1187,6 +1257,7 @@
 
     async function deleteClient() {
       if (!selectedClientId) return;
+
       const ok = confirm("Supprimer ce client et tous ses documents ?");
       if (!ok) return;
 
@@ -1233,12 +1304,12 @@
         return;
       }
 
+      removeClientTags(selectedClientId);
       selectedClientId = null;
       editingId = null;
       resetForm();
       await loadClients();
       $("docList").innerHTML = "";
-      setDocMsg("Sélectionne un client pour gérer ses documents.");
       $("previewWrap").classList.add("hidden");
       $("previewFrame").src = "about:blank";
       setSidebarMsg("Client et documents supprimés.");
@@ -1246,6 +1317,7 @@
 
     async function loadDocuments(clientId) {
       setDocMsg("Chargement des documents...");
+
       const { data, error } = await clientDb.storage.from("Documents").list(clientId);
 
       if (error) {
@@ -1268,6 +1340,7 @@
       data.forEach(file => {
         const sizeBytes = file.metadata && file.metadata.size ? file.metadata.size : 0;
         const sizeMo = sizeBytes ? (sizeBytes / 1024 / 1024).toFixed(2) + " Mo" : "-";
+
         const div = document.createElement("div");
         div.className = "doc-item";
         div.innerHTML = `
@@ -1339,6 +1412,7 @@
       for (const file of files) {
         const path = `${selectedClientId}/${Date.now()}-${file.name}`;
         const { error } = await clientDb.storage.from("Documents").upload(path, file, { upsert: true });
+
         if (error) {
           setDocMsg("Erreur upload: " + error.message);
           return;
@@ -1351,42 +1425,53 @@
     }
 
     function setActiveTab(tab) {
-      document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.toggle('active', btn.dataset.tab === tab));
-      document.querySelectorAll('.tab-panel').forEach(panel => panel.classList.add('hidden'));
-      $(`tab_${tab}`).classList.remove('hidden');
+      document.querySelectorAll(".tab-switch").forEach(btn => {
+        btn.classList.toggle("active", btn.dataset.tab === tab);
+      });
+
+      document.querySelectorAll(".tab-panel").forEach(panel => {
+        panel.classList.add("hidden");
+      });
+
+      $(`tab_${tab}`).classList.remove("hidden");
     }
 
-    document.querySelectorAll('#tagEditor [data-tag]').forEach(btn => {
-      btn.addEventListener('click', () => toggleEditorTag(btn.dataset.tag));
+    document.querySelectorAll("#tagEditor .tag-btn").forEach(btn => {
+      btn.addEventListener("click", () => toggleEditorTag(btn.dataset.tag));
+    });
+
+    document.querySelectorAll(".tab-switch").forEach(btn => {
+      btn.addEventListener("click", () => setActiveTab(btn.dataset.tab));
     });
 
     $("openCreateBtn").addEventListener("click", () => {
       resetForm();
       openModal("create");
     });
+
     $("closeModalBtn").addEventListener("click", closeModal);
+
     $("clientModalBackdrop").addEventListener("click", (e) => {
-      if (e.target.id === 'clientModalBackdrop') closeModal();
+      if (e.target.id === "clientModalBackdrop") closeModal();
     });
+
     $("saveBtn").addEventListener("click", saveClient);
     $("resetBtn").addEventListener("click", resetForm);
     $("supplier").addEventListener("change", updateSupplierOther);
     $("contract_type").addEventListener("change", updateContractFields);
     $("search").addEventListener("input", renderClientList);
     $("uploadDocBtn").addEventListener("click", uploadDocuments);
+
     $("editSelectedBtn").addEventListener("click", () => {
       const c = clients.find(x => x.id === selectedClientId);
       if (!c) return;
       fillForm(c);
     });
+
     $("deleteSelectedBtn").addEventListener("click", deleteClient);
 
-    document.querySelectorAll('.tab-btn').forEach(btn => {
-      btn.addEventListener('click', () => setActiveTab(btn.dataset.tab));
-    });
-
     resetForm();
-    setActiveTab('infos');
+    setActiveTab("infos");
     loadClients();
   </script>
 </body>
