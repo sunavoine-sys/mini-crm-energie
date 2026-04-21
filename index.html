@@ -21,7 +21,6 @@
 
     * { box-sizing: border-box; }
     html { scroll-behavior: smooth; }
-
     body {
       margin: 0;
       font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
@@ -195,10 +194,10 @@
       font-size: 14px;
       outline: none;
       transition: 0.2s ease;
+      box-shadow: inset 0 0 0 1px transparent;
     }
 
     input::placeholder, textarea::placeholder { color: #7b8daf; }
-
     input:focus, select:focus, textarea:focus {
       border-color: rgba(78,242,255,0.52);
       box-shadow: 0 0 0 4px rgba(78,242,255,0.1), 0 0 24px rgba(78,242,255,0.12);
@@ -223,6 +222,8 @@
       font-weight: 800;
       cursor: pointer;
       transition: 0.18s ease;
+      position: relative;
+      overflow: hidden;
     }
 
     button:hover { transform: translateY(-1px) scale(1.01); }
@@ -373,25 +374,7 @@
       margin-bottom: 14px;
     }
 
-    .tab-switch {
-      padding: 10px 13px;
-      border-radius: 999px;
-      background: rgba(255,255,255,0.04);
-      border: 1px solid rgba(255,255,255,0.08);
-      color: var(--muted);
-      font-size: 12px;
-      font-weight: 800;
-      cursor: pointer;
-      transition: 0.18s ease;
-    }
-
-    .tab-switch.active {
-      color: #08111f;
-      background: linear-gradient(135deg, var(--cyan), #aefbff);
-      border-color: transparent;
-      box-shadow: 0 10px 24px rgba(78,242,255,0.2);
-    }
-
+    .tab-switch,
     .tag-btn {
       padding: 10px 13px;
       border-radius: 999px;
@@ -404,6 +387,7 @@
       transition: 0.18s ease;
     }
 
+    .tab-switch.active,
     .tag-btn.active {
       color: #08111f;
       background: linear-gradient(135deg, var(--cyan), #aefbff);
@@ -492,19 +476,6 @@
       display: block;
       background: white;
     }
-
-    .empty-state {
-      display: grid;
-      place-items: center;
-      min-height: 320px;
-      text-align: center;
-      padding: 30px;
-      border: 1px dashed rgba(255,255,255,0.12);
-      border-radius: 22px;
-      background: rgba(255,255,255,0.03);
-    }
-
-    .empty-state h3 { margin-bottom: 8px; }
 
     .floating-orb {
       position: fixed;
@@ -619,18 +590,11 @@
 
     <div class="right-col">
       <div class="panel">
-        <div id="selectedEmpty" class="empty-state">
-          <div>
-            <h3>Sélectionne un client</h3>
-            <div class="muted">Clique sur une fiche à gauche pour afficher les infos ici.</div>
-          </div>
-        </div>
-
-        <div id="selectedWrap" class="hidden">
+        <div id="selectedWrap">
           <div class="panel-header">
             <div>
-              <h2 id="selectedTitle">Aucun client sélectionné</h2>
-              <div class="muted" id="selectedSubtitle">Choisis un client dans la colonne de gauche.</div>
+              <h2 id="selectedTitle">Aucun client</h2>
+              <div class="muted" id="selectedSubtitle">Crée ou sélectionne un client pour afficher le dossier.</div>
             </div>
             <div class="actions">
               <button class="btn-secondary btn-small" id="editSelectedBtn">Modifier</button>
@@ -666,8 +630,8 @@
 
           <div id="tab_infos" class="tab-panel">
             <div class="grid-2" style="margin-top:8px;">
-              <div class="note-box" id="infoBoxA"></div>
-              <div class="note-box" id="infoBoxB"></div>
+              <div class="note-box" id="infoBoxA"><strong>Contact</strong><br>-<br><br><strong>Email</strong><br>-<br><br><strong>Téléphone</strong><br>-</div>
+              <div class="note-box" id="infoBoxB"><strong>Adresse</strong><br>-<br><br><strong>PDL</strong><br>-<br><br><strong>Budget annuel</strong><br>-</div>
             </div>
           </div>
 
@@ -904,8 +868,7 @@
   <script>
     const SUPABASE_URL = "https://bbghzarbawbugrmwlxjj.supabase.co";
     const SUPABASE_ANON_KEY = "sb_publishable_Rfr6TeYwOI3jIseYVT70BQ_fYCgCD3p";
-    const CLIENT_TAGS_KEY = "crm_client_tags_v2";
-
+    const CLIENT_TAGS_KEY = "crm_client_tags_v3";
     const clientDb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
     let clients = [];
@@ -961,8 +924,8 @@
 
     function refreshTagEditor() {
       const selected = parseTags($("client_tags").value);
-      document.querySelectorAll("#tagEditor .tag-btn").forEach(btn => {
-        btn.classList.toggle("active", selected.includes(btn.dataset.tag));
+      document.querySelectorAll('#tagEditor .tag-btn').forEach(btn => {
+        btn.classList.toggle('active', selected.includes(btn.dataset.tag));
       });
     }
 
@@ -971,14 +934,14 @@
       const next = current.includes(tag)
         ? current.filter(t => t !== tag)
         : [...current, tag];
-      $("client_tags").value = next.join(", ");
+      $("client_tags").value = next.join(', ');
       refreshTagEditor();
     }
 
     function renderClientTags(client) {
       const wrap = $("tagChips");
       wrap.innerHTML = "";
-      const tags = getClientTags(client.id);
+      const tags = client?.id ? getClientTags(client.id) : [];
 
       if (!tags.length) {
         wrap.innerHTML = '<span class="muted">Aucun tag pour ce dossier.</span>';
@@ -1041,7 +1004,6 @@
 
     async function loadClients(selectAfter = null) {
       setSidebarMsg("Chargement des clients...");
-
       const { data, error } = await clientDb
         .from("clients")
         .select("*")
@@ -1086,7 +1048,6 @@
 
       filtered.forEach(c => {
         const tags = getClientTags(c.id).slice(0, 2);
-
         const div = document.createElement("div");
         div.className = "client-card" + (selectedClientId === c.id ? " active" : "");
         div.innerHTML = `
@@ -1137,7 +1098,7 @@
       $("annual_budget").value = c.annual_budget || "";
       $("notes").value = c.notes || "";
       $("acd_signed").checked = !!c.acd_signed;
-      $("client_tags").value = getClientTags(c.id).join(", ");
+      $("client_tags").value = getClientTags(c.id).join(', ');
       refreshTagEditor();
       updateSupplierOther();
       updateContractFields();
@@ -1149,16 +1110,21 @@
       const c = clients.find(x => x.id === selectedClientId);
 
       if (!c) {
-        $("selectedEmpty").classList.remove("hidden");
-        $("selectedWrap").classList.add("hidden");
+        $("selectedTitle").textContent = "Aucun client";
+        $("selectedSubtitle").textContent = "Crée ou sélectionne un client pour afficher le dossier.";
+        $("sum_status").textContent = "-";
+        $("sum_supplier").textContent = "-";
+        $("sum_contract").textContent = "-";
+        $("notesBox").textContent = "Aucune note.";
+        renderClientTags(null);
+        $("infoBoxA").innerHTML = `<strong>Contact</strong><br>-<br><br><strong>Email</strong><br>-<br><br><strong>Téléphone</strong><br>-`;
+        $("infoBoxB").innerHTML = `<strong>Adresse</strong><br>-<br><br><strong>PDL</strong><br>-<br><br><strong>Budget annuel</strong><br>-`;
         $("docList").innerHTML = "";
+        setDocMsg("Sélectionne un client pour gérer ses documents.");
         $("previewWrap").classList.add("hidden");
         $("previewFrame").src = "about:blank";
         return;
       }
-
-      $("selectedEmpty").classList.add("hidden");
-      $("selectedWrap").classList.remove("hidden");
 
       $("selectedTitle").textContent = c.company || "Client";
       $("selectedSubtitle").textContent = [c.first_name, c.last_name, c.email].filter(Boolean).join(" • ");
@@ -1174,19 +1140,8 @@
       $("sum_contract").textContent = contractLabel;
       $("notesBox").textContent = c.notes || "Aucune note.";
       renderClientTags(c);
-
-      $("infoBoxA").innerHTML = `
-        <strong>Contact</strong><br>${[c.first_name, c.last_name].filter(Boolean).join(" ") || "-"}
-        <br><br><strong>Email</strong><br>${c.email || "-"}
-        <br><br><strong>Téléphone</strong><br>${c.phone || "-"}
-      `;
-
-      $("infoBoxB").innerHTML = `
-        <strong>Adresse</strong><br>${c.address || "-"}
-        <br><br><strong>PDL</strong><br>${c.pdl_number || "-"}
-        <br><br><strong>Budget annuel</strong><br>${c.annual_budget || "-"}
-      `;
-
+      $("infoBoxA").innerHTML = `<strong>Contact</strong><br>${[c.first_name, c.last_name].filter(Boolean).join(" ") || "-"}<br><br><strong>Email</strong><br>${c.email || "-"}<br><br><strong>Téléphone</strong><br>${c.phone || "-"}`;
+      $("infoBoxB").innerHTML = `<strong>Adresse</strong><br>${c.address || "-"}<br><br><strong>PDL</strong><br>${c.pdl_number || "-"}<br><br><strong>Budget annuel</strong><br>${c.annual_budget || "-"}`;
       loadDocuments(c.id);
     }
 
@@ -1227,14 +1182,12 @@
       };
 
       setMsg("Enregistrement...");
-
       if (editingId) {
         const { error } = await clientDb.from("clients").update(payload).eq("id", editingId);
         if (error) {
           setMsg("Erreur modification client: " + error.message);
           return;
         }
-
         saveClientTags(editingId, parseTags($("client_tags").value));
         selectedClientId = editingId;
         await loadClients(editingId);
@@ -1246,7 +1199,6 @@
           setMsg("Erreur création client: " + error.message);
           return;
         }
-
         saveClientTags(data.id, parseTags($("client_tags").value));
         selectedClientId = data.id;
         await loadClients(data.id);
@@ -1257,7 +1209,6 @@
 
     async function deleteClient() {
       if (!selectedClientId) return;
-
       const ok = confirm("Supprimer ce client et tous ses documents ?");
       if (!ok) return;
 
@@ -1310,6 +1261,7 @@
       resetForm();
       await loadClients();
       $("docList").innerHTML = "";
+      setDocMsg("Sélectionne un client pour gérer ses documents.");
       $("previewWrap").classList.add("hidden");
       $("previewFrame").src = "about:blank";
       setSidebarMsg("Client et documents supprimés.");
@@ -1317,7 +1269,6 @@
 
     async function loadDocuments(clientId) {
       setDocMsg("Chargement des documents...");
-
       const { data, error } = await clientDb.storage.from("Documents").list(clientId);
 
       if (error) {
@@ -1340,7 +1291,6 @@
       data.forEach(file => {
         const sizeBytes = file.metadata && file.metadata.size ? file.metadata.size : 0;
         const sizeMo = sizeBytes ? (sizeBytes / 1024 / 1024).toFixed(2) + " Mo" : "-";
-
         const div = document.createElement("div");
         div.className = "doc-item";
         div.innerHTML = `
@@ -1412,7 +1362,6 @@
       for (const file of files) {
         const path = `${selectedClientId}/${Date.now()}-${file.name}`;
         const { error } = await clientDb.storage.from("Documents").upload(path, file, { upsert: true });
-
         if (error) {
           setDocMsg("Erreur upload: " + error.message);
           return;
@@ -1425,53 +1374,42 @@
     }
 
     function setActiveTab(tab) {
-      document.querySelectorAll(".tab-switch").forEach(btn => {
-        btn.classList.toggle("active", btn.dataset.tab === tab);
-      });
-
-      document.querySelectorAll(".tab-panel").forEach(panel => {
-        panel.classList.add("hidden");
-      });
-
-      $(`tab_${tab}`).classList.remove("hidden");
+      document.querySelectorAll('.tab-switch').forEach(btn => btn.classList.toggle('active', btn.dataset.tab === tab));
+      document.querySelectorAll('.tab-panel').forEach(panel => panel.classList.add('hidden'));
+      $(`tab_${tab}`).classList.remove('hidden');
     }
 
-    document.querySelectorAll("#tagEditor .tag-btn").forEach(btn => {
-      btn.addEventListener("click", () => toggleEditorTag(btn.dataset.tag));
+    document.querySelectorAll('#tagEditor [data-tag]').forEach(btn => {
+      btn.addEventListener('click', () => toggleEditorTag(btn.dataset.tag));
     });
 
-    document.querySelectorAll(".tab-switch").forEach(btn => {
-      btn.addEventListener("click", () => setActiveTab(btn.dataset.tab));
+    document.querySelectorAll('.tab-switch').forEach(btn => {
+      btn.addEventListener('click', () => setActiveTab(btn.dataset.tab));
     });
 
     $("openCreateBtn").addEventListener("click", () => {
       resetForm();
       openModal("create");
     });
-
     $("closeModalBtn").addEventListener("click", closeModal);
-
     $("clientModalBackdrop").addEventListener("click", (e) => {
-      if (e.target.id === "clientModalBackdrop") closeModal();
+      if (e.target.id === 'clientModalBackdrop') closeModal();
     });
-
     $("saveBtn").addEventListener("click", saveClient);
     $("resetBtn").addEventListener("click", resetForm);
     $("supplier").addEventListener("change", updateSupplierOther);
     $("contract_type").addEventListener("change", updateContractFields);
     $("search").addEventListener("input", renderClientList);
     $("uploadDocBtn").addEventListener("click", uploadDocuments);
-
     $("editSelectedBtn").addEventListener("click", () => {
       const c = clients.find(x => x.id === selectedClientId);
       if (!c) return;
       fillForm(c);
     });
-
     $("deleteSelectedBtn").addEventListener("click", deleteClient);
 
     resetForm();
-    setActiveTab("infos");
+    setActiveTab('infos');
     loadClients();
   </script>
 </body>
