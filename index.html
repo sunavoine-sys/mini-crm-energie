@@ -101,6 +101,7 @@
       display: flex;
       gap: 10px;
       flex-wrap: wrap;
+      align-items: center;
     }
 
     .top-pill {
@@ -114,11 +115,12 @@
 
     .wrap {
       display: grid;
-      grid-template-columns: 430px 1fr;
+      grid-template-columns: 400px 1fr;
       gap: 22px;
       padding: 22px;
       position: relative;
       z-index: 1;
+      min-height: calc(100vh - 90px);
     }
 
     .panel {
@@ -138,6 +140,14 @@
       inset: -1px;
       background: linear-gradient(135deg, rgba(78,242,255,0.08), transparent 30%, transparent 70%, rgba(154,108,255,0.08));
       pointer-events: none;
+    }
+
+    .sticky-panel {
+      position: sticky;
+      top: 98px;
+      height: calc(100vh - 120px);
+      display: flex;
+      flex-direction: column;
     }
 
     .panel-header {
@@ -195,21 +205,13 @@
     }
 
     input::placeholder, textarea::placeholder { color: #7b8daf; }
-
     input:focus, select:focus, textarea:focus {
       border-color: rgba(78,242,255,0.52);
       box-shadow: 0 0 0 4px rgba(78,242,255,0.1), 0 0 24px rgba(78,242,255,0.12);
       transform: translateY(-1px);
     }
-
-    select option {
-      color: #111827;
-    }
-
-    textarea {
-      min-height: 100px;
-      resize: vertical;
-    }
+    select option { color: #111827; }
+    textarea { min-height: 100px; resize: vertical; }
 
     .actions {
       display: flex;
@@ -251,6 +253,12 @@
       box-shadow: 0 12px 28px rgba(255, 77, 104, 0.2);
     }
 
+    .btn-small {
+      padding: 9px 12px;
+      font-size: 12px;
+      border-radius: 12px;
+    }
+
     .msg {
       margin-top: 10px;
       padding: 13px 14px;
@@ -267,9 +275,9 @@
       display: grid;
       gap: 10px;
       margin-top: 12px;
-      max-height: 340px;
       overflow: auto;
       padding-right: 4px;
+      flex: 1;
     }
 
     .client-card {
@@ -299,6 +307,13 @@
       font-size: 16px;
     }
 
+    .card-row {
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      align-items: center;
+    }
+
     .badge {
       display: inline-block;
       padding: 5px 9px;
@@ -315,6 +330,7 @@
     .right-col {
       display: grid;
       gap: 20px;
+      align-content: start;
     }
 
     .summary {
@@ -356,6 +372,34 @@
       font-size: 15px;
       font-weight: 800;
     }
+
+    .section-tabs {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-bottom: 14px;
+    }
+
+    .tab-btn {
+      padding: 10px 13px;
+      border-radius: 999px;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.08);
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 800;
+      cursor: pointer;
+      transition: 0.18s ease;
+    }
+
+    .tab-btn.active {
+      color: #08111f;
+      background: linear-gradient(135deg, var(--cyan), #aefbff);
+      border-color: transparent;
+      box-shadow: 0 10px 24px rgba(78,242,255,0.2);
+    }
+
+    .tab-panel.hidden { display: none; }
 
     .doc-tools {
       display: flex;
@@ -410,6 +454,37 @@
       line-height: 1.5;
     }
 
+    .preview-box {
+      margin-top: 14px;
+      border-radius: 18px;
+      overflow: hidden;
+      border: 1px solid rgba(255,255,255,0.08);
+      background: rgba(255,255,255,0.03);
+    }
+
+    .preview-box iframe {
+      width: 100%;
+      height: 620px;
+      border: 0;
+      display: block;
+      background: white;
+    }
+
+    .empty-state {
+      display: grid;
+      place-items: center;
+      min-height: 320px;
+      text-align: center;
+      padding: 30px;
+      border: 1px dashed rgba(255,255,255,0.12);
+      border-radius: 22px;
+      background: rgba(255,255,255,0.03);
+    }
+
+    .empty-state h3 {
+      margin-bottom: 8px;
+    }
+
     .floating-orb {
       position: fixed;
       width: 260px;
@@ -434,6 +509,44 @@
       animation: shimmer 6s linear infinite;
     }
 
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(1, 6, 14, 0.6);
+      backdrop-filter: blur(8px);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 50;
+      padding: 20px;
+    }
+
+    .modal-backdrop.show { display: flex; }
+
+    .modal {
+      width: min(980px, 100%);
+      max-height: 88vh;
+      overflow: auto;
+      border-radius: 24px;
+      background: linear-gradient(180deg, rgba(14,20,34,0.97), rgba(17,25,42,0.98));
+      border: 1px solid rgba(255,255,255,0.08);
+      box-shadow: var(--shadow);
+      padding: 18px;
+    }
+
+    .modal-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 14px;
+      position: sticky;
+      top: 0;
+      background: linear-gradient(180deg, rgba(14,20,34,0.98), rgba(14,20,34,0.92));
+      padding-bottom: 10px;
+      z-index: 2;
+    }
+
     @keyframes pulseGlow {
       0%, 100% { box-shadow: 0 0 18px rgba(78,242,255,0.14); transform: translateY(0); }
       50% { box-shadow: 0 0 28px rgba(154,108,255,0.24); transform: translateY(-1px); }
@@ -452,6 +565,8 @@
     @media (max-width: 1100px) {
       .wrap { grid-template-columns: 1fr; }
       .summary { grid-template-columns: 1fr; }
+      .sticky-panel { position: relative; top: 0; height: auto; }
+      .preview-box iframe { height: 420px; }
     }
   </style>
 </head>
@@ -471,21 +586,105 @@
     <div class="top-actions">
       <div class="top-pill">⚡ Offres & contrats</div>
       <div class="top-pill">📄 Documents sécurisés</div>
-      <div class="top-pill">🚀 Interface premium</div>
+      <button class="btn-primary" id="openCreateBtn">+ Nouveau client</button>
     </div>
   </div>
 
   <div class="wrap">
-    <div class="panel">
+    <div class="panel sticky-panel">
       <div class="panel-header">
         <div>
-          <h2>Client / Modification</h2>
-          <div class="muted">Une interface plus vive, plus agréable, mais avec la même base solide.</div>
+          <h2>Portefeuille clients</h2>
+          <div class="muted">Chaque fiche reste compacte. Clique dessus pour ouvrir tout le dossier à droite.</div>
         </div>
-        <span class="badge">Live</span>
+        <span class="badge" id="clientCountBadge">0</span>
       </div>
 
-      <div class="grid" style="margin-top:16px;">
+      <input id="search" placeholder="Rechercher une entreprise..." />
+      <div id="clientList" class="client-list"></div>
+      <div id="sidebarMsg" class="msg">Prêt.</div>
+    </div>
+
+    <div class="right-col">
+      <div class="panel">
+        <div id="selectedEmpty" class="empty-state">
+          <div>
+            <h3>Sélectionne une fiche client</h3>
+            <div class="muted">Tu retrouveras ici le résumé, les documents, les notes et les actions rapides.</div>
+          </div>
+        </div>
+
+        <div id="selectedWrap" class="hidden">
+          <div class="panel-header">
+            <div>
+              <h2 id="selectedTitle">Aucun client sélectionné</h2>
+              <div class="muted" id="selectedSubtitle">Choisis un client dans la colonne de gauche.</div>
+            </div>
+            <div class="actions">
+              <button class="btn-secondary btn-small" id="editSelectedBtn">Modifier</button>
+              <button class="btn-danger btn-small" id="deleteSelectedBtn">Supprimer</button>
+            </div>
+          </div>
+
+          <div class="summary">
+            <div class="box">
+              <div class="k">Statut</div>
+              <div class="v" id="sum_status">-</div>
+            </div>
+            <div class="box">
+              <div class="k">Fournisseur</div>
+              <div class="v" id="sum_supplier">-</div>
+            </div>
+            <div class="box">
+              <div class="k">Contrat</div>
+              <div class="v" id="sum_contract">-</div>
+            </div>
+          </div>
+
+          <div class="section-tabs" style="margin-top:16px;">
+            <button class="tab-btn active" data-tab="infos">Infos</button>
+            <button class="tab-btn" data-tab="documents">Documents</button>
+            <button class="tab-btn" data-tab="notes">Notes</button>
+          </div>
+
+          <div id="tab_infos" class="tab-panel">
+            <div class="grid-2" style="margin-top:8px;">
+              <div class="note-box" id="infoBoxA"></div>
+              <div class="note-box" id="infoBoxB"></div>
+            </div>
+          </div>
+
+          <div id="tab_documents" class="tab-panel hidden">
+            <div class="doc-tools" style="margin-top:8px;">
+              <input type="file" id="docInput" multiple />
+              <button class="btn-primary" id="uploadDocBtn">Importer des fichiers</button>
+            </div>
+            <div id="docMsg" class="msg">Sélectionne un client pour gérer ses documents.</div>
+            <div id="docList" class="doc-list" style="margin-top:12px;"></div>
+            <div id="previewWrap" class="preview-box hidden" style="margin-top:16px;">
+              <iframe id="previewFrame" src="about:blank" title="Aperçu document"></iframe>
+            </div>
+          </div>
+
+          <div id="tab_notes" class="tab-panel hidden">
+            <div class="note-box" id="notesBox">Aucune note.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="clientModalBackdrop" class="modal-backdrop">
+    <div class="modal">
+      <div class="modal-header">
+        <div>
+          <h2 id="modalTitle">Nouveau client</h2>
+          <div class="muted">Formulaire dédié, sans faire défiler toute la page.</div>
+        </div>
+        <button class="btn-secondary btn-small" id="closeModalBtn">Fermer</button>
+      </div>
+
+      <div class="grid">
         <div>
           <label>Entreprise *</label>
           <input id="company" placeholder="Nom de l'entreprise" />
@@ -666,71 +865,9 @@
         <div class="actions">
           <button class="btn-primary" id="saveBtn">Enregistrer le client</button>
           <button class="btn-secondary" id="resetBtn" type="button">Nouveau formulaire</button>
-          <button class="btn-danger hidden" id="deleteBtn" type="button">Supprimer le client</button>
         </div>
 
         <div id="msg" class="msg">Prêt.</div>
-      </div>
-
-      <hr style="margin:20px 0; border:none; border-top:1px solid rgba(255,255,255,0.08);" />
-
-      <div class="panel-header" style="margin-bottom:10px;">
-        <h3>Clients enregistrés</h3>
-        <span class="badge" id="clientCountBadge">0</span>
-      </div>
-      <input id="search" placeholder="Rechercher une entreprise..." />
-      <div id="clientList" class="client-list"></div>
-    </div>
-
-    <div class="right-col">
-      <div class="panel">
-        <div class="panel-header">
-          <div>
-            <h2 id="selectedTitle">Aucun client sélectionné</h2>
-            <div class="muted" id="selectedSubtitle">Choisis un client dans la colonne de gauche.</div>
-          </div>
-          <span class="badge">Dossier</span>
-        </div>
-
-        <div id="selectedContent" class="hidden" style="margin-top:16px;">
-          <div class="summary">
-            <div class="box">
-              <div class="k">Statut</div>
-              <div class="v" id="sum_status">-</div>
-            </div>
-            <div class="box">
-              <div class="k">Fournisseur</div>
-              <div class="v" id="sum_supplier">-</div>
-            </div>
-            <div class="box">
-              <div class="k">Contrat</div>
-              <div class="v" id="sum_contract">-</div>
-            </div>
-          </div>
-
-          <div style="margin-top:16px;">
-            <h3>Notes</h3>
-            <div class="note-box" id="notesBox">Aucune note.</div>
-          </div>
-        </div>
-      </div>
-
-      <div class="panel">
-        <div class="panel-header">
-          <div>
-            <h2>Documents du client</h2>
-            <div class="muted">Bucket Supabase <strong>Documents</strong>, relié au client sélectionné.</div>
-          </div>
-          <span class="badge">Cloud</span>
-        </div>
-
-        <div class="doc-tools" style="margin-top:14px;">
-          <input type="file" id="docInput" multiple />
-          <button class="btn-primary" id="uploadDocBtn">Importer des fichiers</button>
-        </div>
-
-        <div id="docMsg" class="msg">Sélectionne un client pour gérer ses documents.</div>
-        <div id="docList" class="doc-list" style="margin-top:12px;"></div>
       </div>
     </div>
   </div>
@@ -748,6 +885,16 @@
 
     function setMsg(t) { $("msg").textContent = t; }
     function setDocMsg(t) { $("docMsg").textContent = t; }
+    function setSidebarMsg(t) { $("sidebarMsg").textContent = t; }
+
+    function openModal(mode = "create") {
+      $("clientModalBackdrop").classList.add("show");
+      $("modalTitle").textContent = mode === "edit" ? "Modifier le client" : "Nouveau client";
+    }
+
+    function closeModal() {
+      $("clientModalBackdrop").classList.remove("show");
+    }
 
     function resetForm() {
       editingId = null;
@@ -777,7 +924,6 @@
       $("annual_budget").value = "";
       $("notes").value = "";
       $("acd_signed").checked = false;
-      $("deleteBtn").classList.add("hidden");
       updateSupplierOther();
       updateContractFields();
       setMsg("Formulaire réinitialisé.");
@@ -795,14 +941,14 @@
     }
 
     async function loadClients(selectAfter = null) {
-      setMsg("Chargement des clients...");
+      setSidebarMsg("Chargement des clients...");
       const { data, error } = await clientDb
         .from("clients")
         .select("*")
         .order("created_at", { ascending: false });
 
       if (error) {
-        setMsg("Erreur chargement clients: " + error.message);
+        setSidebarMsg("Erreur chargement clients: " + error.message);
         return;
       }
 
@@ -817,7 +963,7 @@
       }
 
       renderSelectedClient();
-      setMsg("Clients chargés.");
+      setSidebarMsg("Clients chargés.");
     }
 
     function renderClientList() {
@@ -840,15 +986,17 @@
         const div = document.createElement("div");
         div.className = "client-card" + (selectedClientId === c.id ? " active" : "");
         div.innerHTML = `
-          <h4>${c.company || "Sans nom"}</h4>
-          <div class="muted">${[c.first_name, c.last_name].filter(Boolean).join(" ") || "Pas de contact"}</div>
-          <div style="margin-top:8px;"><span class="badge">${c.status || "Sans statut"}</span></div>
+          <div class="card-row">
+            <h4>${c.company || "Sans nom"}</h4>
+            <span class="badge">${c.status || "Sans statut"}</span>
+          </div>
+          <div class="muted" style="margin-top:6px;">${[c.first_name, c.last_name].filter(Boolean).join(" ") || "Pas de contact"}</div>
+          <div class="muted" style="margin-top:8px;">${c.supplier || "Pas de fournisseur"}</div>
         `;
         div.addEventListener("click", () => {
           selectedClientId = c.id;
           renderClientList();
           renderSelectedClient();
-          fillForm(c);
         });
         list.appendChild(div);
       });
@@ -882,27 +1030,29 @@
       $("annual_budget").value = c.annual_budget || "";
       $("notes").value = c.notes || "";
       $("acd_signed").checked = !!c.acd_signed;
-      $("deleteBtn").classList.remove("hidden");
       updateSupplierOther();
       updateContractFields();
       setMsg("Client chargé dans le formulaire.");
+      openModal("edit");
     }
 
     function renderSelectedClient() {
       const c = clients.find(x => x.id === selectedClientId);
 
       if (!c) {
-        $("selectedTitle").textContent = "Aucun client sélectionné";
-        $("selectedSubtitle").textContent = "Choisis un client dans la colonne de gauche.";
-        $("selectedContent").classList.add("hidden");
+        $("selectedEmpty").classList.remove("hidden");
+        $("selectedWrap").classList.add("hidden");
         $("docList").innerHTML = "";
         setDocMsg("Sélectionne un client pour gérer ses documents.");
+        $("previewWrap").classList.add("hidden");
+        $("previewFrame").src = "about:blank";
         return;
       }
 
+      $("selectedEmpty").classList.add("hidden");
+      $("selectedWrap").classList.remove("hidden");
       $("selectedTitle").textContent = c.company || "Client";
       $("selectedSubtitle").textContent = [c.first_name, c.last_name, c.email].filter(Boolean).join(" • ");
-      $("selectedContent").classList.remove("hidden");
 
       const supplier = c.supplier === "Autres" ? (c.supplier_other || "Autres") : (c.supplier || "-");
       let contractLabel = c.contract_type || "-";
@@ -914,6 +1064,8 @@
       $("sum_supplier").textContent = supplier;
       $("sum_contract").textContent = contractLabel;
       $("notesBox").textContent = c.notes || "Aucune note.";
+      $("infoBoxA").innerHTML = `<strong>Contact</strong><br>${[c.first_name, c.last_name].filter(Boolean).join(" ") || "-"}<br><br><strong>Email</strong><br>${c.email || "-"}<br><br><strong>Téléphone</strong><br>${c.phone || "-"}`;
+      $("infoBoxB").innerHTML = `<strong>Adresse</strong><br>${c.address || "-"}<br><br><strong>PDL</strong><br>${c.pdl_number || "-"}<br><br><strong>Budget annuel</strong><br>${c.annual_budget || "-"}`;
 
       loadDocuments(c.id);
     }
@@ -963,6 +1115,7 @@
         }
         selectedClientId = editingId;
         await loadClients(editingId);
+        closeModal();
         setMsg("Client modifié avec succès.");
       } else {
         const { data, error } = await clientDb.from("clients").insert([payload]).select().single();
@@ -972,35 +1125,35 @@
         }
         selectedClientId = data.id;
         await loadClients(data.id);
-        fillForm(data);
+        closeModal();
         setMsg("Client créé avec succès.");
       }
     }
 
     async function deleteClient() {
-      if (!editingId) return;
+      if (!selectedClientId) return;
       const ok = confirm("Supprimer ce client et tous ses documents ?");
       if (!ok) return;
 
-      setMsg("Suppression du client et des documents...");
+      setSidebarMsg("Suppression du client et des documents...");
 
       const { data: docs, error: listError } = await clientDb.storage
         .from("Documents")
-        .list(editingId);
+        .list(selectedClientId);
 
       if (listError) {
-        setMsg("Erreur lecture documents storage: " + listError.message);
+        setSidebarMsg("Erreur lecture documents storage: " + listError.message);
         return;
       }
 
       if (docs && docs.length > 0) {
-        const paths = docs.map(doc => `${editingId}/${doc.name}`);
+        const paths = docs.map(doc => `${selectedClientId}/${doc.name}`);
         const { error: removeError } = await clientDb.storage
           .from("Documents")
           .remove(paths);
 
         if (removeError) {
-          setMsg("Erreur suppression fichiers: " + removeError.message);
+          setSidebarMsg("Erreur suppression fichiers: " + removeError.message);
           return;
         }
       }
@@ -1008,29 +1161,32 @@
       const { error: deleteDocsError } = await clientDb
         .from("documents")
         .delete()
-        .eq("client_id", editingId);
+        .eq("client_id", selectedClientId);
 
       if (deleteDocsError) {
-        setMsg("Erreur suppression table documents: " + deleteDocsError.message);
+        setSidebarMsg("Erreur suppression table documents: " + deleteDocsError.message);
         return;
       }
 
       const { error: deleteClientError } = await clientDb
         .from("clients")
         .delete()
-        .eq("id", editingId);
+        .eq("id", selectedClientId);
 
       if (deleteClientError) {
-        setMsg("Erreur suppression client: " + deleteClientError.message);
+        setSidebarMsg("Erreur suppression client: " + deleteClientError.message);
         return;
       }
 
-      if (selectedClientId === editingId) selectedClientId = null;
+      selectedClientId = null;
+      editingId = null;
       resetForm();
       await loadClients();
       $("docList").innerHTML = "";
       setDocMsg("Sélectionne un client pour gérer ses documents.");
-      setMsg("Client et documents supprimés.");
+      $("previewWrap").classList.add("hidden");
+      $("previewFrame").src = "about:blank";
+      setSidebarMsg("Client et documents supprimés.");
     }
 
     async function loadDocuments(clientId) {
@@ -1044,6 +1200,8 @@
 
       const list = $("docList");
       list.innerHTML = "";
+      $("previewWrap").classList.add("hidden");
+      $("previewFrame").src = "about:blank";
 
       if (!data || data.length === 0) {
         setDocMsg("Aucun document sur ce client.");
@@ -1063,8 +1221,8 @@
             <div class="doc-meta">${sizeMo}</div>
           </div>
           <div>
-            <button class="btn-secondary" data-open="${file.name}">Ouvrir</button>
-            <button class="btn-danger" data-delete="${file.name}">Supprimer</button>
+            <button class="btn-secondary btn-small" data-open="${file.name}">Ouvrir</button>
+            <button class="btn-danger btn-small" data-delete="${file.name}">Supprimer</button>
           </div>
         `;
         list.appendChild(div);
@@ -1082,7 +1240,9 @@
             return;
           }
 
-          window.open(data.signedUrl, "_blank");
+          $("previewFrame").src = data.signedUrl;
+          $("previewWrap").classList.remove("hidden");
+          setDocMsg("Aperçu chargé.");
         });
       });
 
@@ -1135,15 +1295,39 @@
       loadDocuments(selectedClientId);
     }
 
+    function setActiveTab(tab) {
+      document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.toggle('active', btn.dataset.tab === tab));
+      document.querySelectorAll('.tab-panel').forEach(panel => panel.classList.add('hidden'));
+      $(`tab_${tab}`).classList.remove('hidden');
+    }
+
+    $("openCreateBtn").addEventListener("click", () => {
+      resetForm();
+      openModal("create");
+    });
+    $("closeModalBtn").addEventListener("click", closeModal);
+    $("clientModalBackdrop").addEventListener("click", (e) => {
+      if (e.target.id === 'clientModalBackdrop') closeModal();
+    });
     $("saveBtn").addEventListener("click", saveClient);
     $("resetBtn").addEventListener("click", resetForm);
-    $("deleteBtn").addEventListener("click", deleteClient);
     $("supplier").addEventListener("change", updateSupplierOther);
     $("contract_type").addEventListener("change", updateContractFields);
     $("search").addEventListener("input", renderClientList);
     $("uploadDocBtn").addEventListener("click", uploadDocuments);
+    $("editSelectedBtn").addEventListener("click", () => {
+      const c = clients.find(x => x.id === selectedClientId);
+      if (!c) return;
+      fillForm(c);
+    });
+    $("deleteSelectedBtn").addEventListener("click", deleteClient);
+
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+      btn.addEventListener('click', () => setActiveTab(btn.dataset.tab));
+    });
 
     resetForm();
+    setActiveTab('infos');
     loadClients();
   </script>
 </body>
