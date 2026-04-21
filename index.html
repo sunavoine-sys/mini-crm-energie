@@ -693,11 +693,37 @@
 
     async function deleteClient() {
       if (!editingId) return;
-      const ok = confirm("Supprimer ce client ? Les documents resteront dans le bucket si tu ne les supprimes pas manuellement.");
+      const ok = confirm("Supprimer ce client et tous ses documents ?");
       if (!ok) return;
 
-      setMsg("Suppression du client...");
-      const { error } = await clientDb.from("clients").delete().eq("id", editingId);
+      setMsg("Suppression du client et des documents...");
+
+      const { data: docs, error: listError } = await clientDb.storage
+        .from("Documents")
+        .list(editingId);
+
+      if (listError) {
+        setMsg("Erreur lecture documents: " + listError.message);
+        return;
+      }
+
+      if (docs && docs.length > 0) {
+        const paths = docs.map(doc => `${editingId}/${doc.name}`);
+        const { error: removeError } = await clientDb.storage
+          .from("Documents")
+          .remove(paths);
+
+        if (removeError) {
+          setMsg("Erreur suppression documents: " + removeError.message);
+          return;
+        }
+      }
+
+      const { error } = await clientDb
+        .from("clients")
+        .delete()
+        .eq("id", editingId);
+
       if (error) {
         setMsg("Erreur suppression client: " + error.message);
         return;
@@ -706,7 +732,9 @@
       if (selectedClientId === editingId) selectedClientId = null;
       resetForm();
       await loadClients();
-      setMsg("Client supprimé.");
+      $("docList").innerHTML = "";
+      setDocMsg("Sélectionne un client pour gérer ses documents.");
+      setMsg("Client et documents supprimés.");
     }
 
     async function loadDocuments(clientId) {
