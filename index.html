@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8" />
+  <title>Mini CRM Energie</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+</head>
+<body>
+  <h1>Upload test</h1>
+
+  <input type="file" id="fileInput" />
+  <button onclick="upload()">Uploader</button>
+
+  <script>
+    const supabase = window.supabase.createClient(
+      "https://bbghzarbawbugrmwlxjj.supabase.co",
+      "sb_publishable_Rfr6TeYwOI3jIseYVT70BQ_fYCgCD3p"
+    );
+
+    async function upload() {
+      const file = document.getElementById("fileInput").files[0];
+      if (!file) return alert("Choisis un fichier");
+
+      const { data, error } = await supabase.storage
+        .from("Documents")
+        .upload("test/" + file.name, file);
+
+      if (error) {
+        alert(error.message);
+      } else {
+        alert("Upload OK");
+      }
+    }
+  </script>
+</body>
+</html>
