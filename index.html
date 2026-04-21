@@ -2,115 +2,759 @@
 <html lang="fr">
 <head>
   <meta charset="UTF-8" />
-  <title>Documents</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dynamic Makers Sales - CRM Énergie</title>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
-    body { font-family: Arial; padding: 20px; }
-    .card {
-      border: 1px solid #ddd;
-      padding: 10px;
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: #f4f6f8;
+      color: #111827;
+    }
+    .topbar {
+      background: #0f172a;
+      color: white;
+      padding: 18px 24px;
+      font-size: 24px;
+      font-weight: 700;
+    }
+    .wrap {
+      display: grid;
+      grid-template-columns: 420px 1fr;
+      gap: 20px;
+      padding: 20px;
+    }
+    .panel {
+      background: white;
+      border-radius: 16px;
+      padding: 18px;
+      box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08);
+    }
+    h2, h3 {
+      margin: 0 0 14px 0;
+    }
+    .muted {
+      color: #64748b;
+      font-size: 14px;
+    }
+    .grid {
+      display: grid;
+      gap: 12px;
+    }
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+    label {
+      display: block;
+      font-size: 13px;
+      font-weight: 600;
+      margin-bottom: 6px;
+      color: #334155;
+    }
+    input, select, textarea {
+      width: 100%;
+      padding: 11px 12px;
+      border-radius: 10px;
+      border: 1px solid #dbe2ea;
+      font-size: 14px;
+      background: white;
+    }
+    textarea {
+      min-height: 90px;
+      resize: vertical;
+    }
+    .actions {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-top: 8px;
+    }
+    button {
+      border: 0;
+      border-radius: 10px;
+      padding: 11px 14px;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    .btn-primary {
+      background: #0f172a;
+      color: white;
+    }
+    .btn-secondary {
+      background: #e2e8f0;
+      color: #0f172a;
+    }
+    .btn-danger {
+      background: #dc2626;
+      color: white;
+    }
+    .msg {
       margin-top: 10px;
+      padding: 12px 14px;
+      border-radius: 10px;
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      font-size: 14px;
+      min-height: 44px;
+      white-space: pre-wrap;
+    }
+    .client-list {
+      display: grid;
+      gap: 10px;
+      margin-top: 12px;
+      max-height: 320px;
+      overflow: auto;
+    }
+    .client-card {
+      border: 1px solid #e2e8f0;
+      border-radius: 12px;
+      padding: 14px;
+      cursor: pointer;
+      background: #fff;
+    }
+    .client-card.active {
+      border-color: #0f172a;
+      background: #f8fafc;
+    }
+    .client-card h4 {
+      margin: 0 0 6px 0;
+      font-size: 16px;
+    }
+    .badge {
+      display: inline-block;
+      padding: 4px 8px;
+      border-radius: 999px;
+      background: #e2e8f0;
+      font-size: 12px;
+      font-weight: 700;
+      color: #334155;
+    }
+    .right-col {
+      display: grid;
+      gap: 20px;
+    }
+    .summary {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+    }
+    .summary .box {
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 12px;
+      padding: 14px;
+    }
+    .summary .box .k {
+      font-size: 12px;
+      color: #64748b;
+      margin-bottom: 6px;
+      font-weight: 700;
+      text-transform: uppercase;
+    }
+    .summary .box .v {
+      font-size: 15px;
+      font-weight: 700;
+    }
+    .doc-tools {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      flex-wrap: wrap;
+      margin-bottom: 12px;
+    }
+    .doc-list {
+      display: grid;
+      gap: 10px;
+    }
+    .doc-item {
       display: flex;
       justify-content: space-between;
       align-items: center;
+      gap: 12px;
+      border: 1px solid #e2e8f0;
+      border-radius: 12px;
+      padding: 12px;
+      background: white;
     }
-    button { margin-left: 5px; }
+    .doc-name {
+      font-weight: 700;
+      word-break: break-word;
+    }
+    .doc-meta {
+      color: #64748b;
+      font-size: 13px;
+      margin-top: 4px;
+    }
+    .hidden { display: none; }
+    .note-box {
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 12px;
+      padding: 14px;
+      min-height: 80px;
+      white-space: pre-wrap;
+    }
+    @media (max-width: 1100px) {
+      .wrap { grid-template-columns: 1fr; }
+      .summary { grid-template-columns: 1fr; }
+    }
   </style>
 </head>
 <body>
+  <div class="topbar">Dynamic Makers Sales — CRM Énergie</div>
 
-  <h1>📁 Documents</h1>
+  <div class="wrap">
+    <div class="panel">
+      <h2>Nouveau client / Modification</h2>
+      <div class="muted">Crée un client, puis sélectionne-le pour gérer ses documents.</div>
 
-  <input type="file" id="fileInput" />
-  <button id="uploadBtn">Uploader</button>
+      <div class="grid" style="margin-top:16px;">
+        <div>
+          <label>Entreprise *</label>
+          <input id="company" placeholder="Nom de l'entreprise" />
+        </div>
 
-  <p id="msg"></p>
+        <div class="grid-2">
+          <div>
+            <label>Prénom</label>
+            <input id="first_name" />
+          </div>
+          <div>
+            <label>Nom</label>
+            <input id="last_name" />
+          </div>
+        </div>
 
-  <div id="fileList"></div>
+        <div class="grid-2">
+          <div>
+            <label>Email</label>
+            <input id="email" />
+          </div>
+          <div>
+            <label>Téléphone</label>
+            <input id="phone" />
+          </div>
+        </div>
+
+        <div>
+          <label>Adresse</label>
+          <input id="address" />
+        </div>
+
+        <div class="grid-2">
+          <div>
+            <label>Statut</label>
+            <select id="status">
+              <option value="Nouveau prospect">Nouveau prospect</option>
+              <option value="En cours">En cours</option>
+              <option value="Offre envoyée">Offre envoyée</option>
+              <option value="Signé">Signé</option>
+              <option value="Perdu">Perdu</option>
+            </select>
+          </div>
+          <div>
+            <label>Assigné à</label>
+            <select id="assigned_to">
+              <option value="">--</option>
+              <option value="Charlotte">Charlotte</option>
+              <option value="Emile">Emile</option>
+              <option value="Arman">Arman</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="grid-2">
+          <div>
+            <label>Fournisseur actuel</label>
+            <select id="supplier">
+              <option value="">--</option>
+              <option value="EDF">EDF</option>
+              <option value="TotalEnergies">TotalEnergies</option>
+              <option value="Engie">Engie</option>
+              <option value="OHM Energie">OHM Energie</option>
+              <option value="Vattenfall">Vattenfall</option>
+              <option value="Ekwateur">Ekwateur</option>
+              <option value="Mint Energie">Mint Energie</option>
+              <option value="Alpiq">Alpiq</option>
+              <option value="GazelEnergie">GazelEnergie</option>
+              <option value="Enercoop">Enercoop</option>
+              <option value="Autres">Autres</option>
+            </select>
+          </div>
+          <div id="supplier_other_wrap" class="hidden">
+            <label>Autre fournisseur</label>
+            <input id="supplier_other" />
+          </div>
+        </div>
+
+        <div class="grid-2">
+          <div>
+            <label>Type de compteur</label>
+            <select id="meter_type">
+              <option value="">--</option>
+              <option value="C2">C2</option>
+              <option value="C4">C4</option>
+              <option value="C5">C5</option>
+            </select>
+          </div>
+          <div>
+            <label>Tarif</label>
+            <select id="tariff_category">
+              <option value="">--</option>
+              <option value="Bleu">Bleu</option>
+              <option value="Jaune">Jaune</option>
+              <option value="Vert">Vert</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="grid-2">
+          <div>
+            <label>Type de contrat</label>
+            <select id="contract_type">
+              <option value="">--</option>
+              <option value="Fixe">Fixe</option>
+              <option value="HP / HC">HP / HC</option>
+              <option value="4 plages">4 plages</option>
+            </select>
+          </div>
+          <div>
+            <label>PDL / Référence compteur</label>
+            <input id="pdl_number" />
+          </div>
+        </div>
+
+        <div id="prices_fixed" class="grid hidden">
+          <div>
+            <label>Prix kWh unique</label>
+            <input id="base_price" placeholder="Ex: 0.14" />
+          </div>
+        </div>
+
+        <div id="prices_hphc" class="grid-2 hidden">
+          <div>
+            <label>Prix HP</label>
+            <input id="price_hp" placeholder="Ex: 0.14" />
+          </div>
+          <div>
+            <label>Prix HC</label>
+            <input id="price_hc" placeholder="Ex: 0.11" />
+          </div>
+        </div>
+
+        <div id="prices_4" class="grid-2 hidden">
+          <div>
+            <label>Prix HPE</label>
+            <input id="price_hpe" />
+          </div>
+          <div>
+            <label>Prix HPH</label>
+            <input id="price_hph" />
+          </div>
+          <div>
+            <label>Prix HCE</label>
+            <input id="price_hce" />
+          </div>
+          <div>
+            <label>Prix HCH</label>
+            <input id="price_hch" />
+          </div>
+        </div>
+
+        <div class="grid-2">
+          <div>
+            <label>Puissance souscrite</label>
+            <input id="subscribed_power" placeholder="Ex: 36 kVA" />
+          </div>
+          <div>
+            <label>Fin de contrat</label>
+            <input id="contract_end_date" type="date" />
+          </div>
+        </div>
+
+        <div>
+          <label>Budget annuel actuel</label>
+          <input id="annual_budget" placeholder="Ex: 12000 €" />
+        </div>
+
+        <div>
+          <label>Notes</label>
+          <textarea id="notes"></textarea>
+        </div>
+
+        <div>
+          <label><input id="acd_signed" type="checkbox" style="width:auto; margin-right:8px;" /> ACD signé</label>
+        </div>
+
+        <div class="actions">
+          <button class="btn-primary" id="saveBtn">Enregistrer le client</button>
+          <button class="btn-secondary" id="resetBtn" type="button">Nouveau formulaire</button>
+          <button class="btn-danger hidden" id="deleteBtn" type="button">Supprimer le client</button>
+        </div>
+
+        <div id="msg" class="msg">Prêt.</div>
+      </div>
+
+      <hr style="margin:20px 0; border:none; border-top:1px solid #e2e8f0;" />
+
+      <h3>Clients enregistrés</h3>
+      <input id="search" placeholder="Rechercher une entreprise..." />
+      <div id="clientList" class="client-list"></div>
+    </div>
+
+    <div class="right-col">
+      <div class="panel">
+        <h2 id="selectedTitle">Aucun client sélectionné</h2>
+        <div class="muted" id="selectedSubtitle">Choisis un client dans la colonne de gauche.</div>
+
+        <div id="selectedContent" class="hidden" style="margin-top:16px;">
+          <div class="summary">
+            <div class="box">
+              <div class="k">Statut</div>
+              <div class="v" id="sum_status">-</div>
+            </div>
+            <div class="box">
+              <div class="k">Fournisseur</div>
+              <div class="v" id="sum_supplier">-</div>
+            </div>
+            <div class="box">
+              <div class="k">Contrat</div>
+              <div class="v" id="sum_contract">-</div>
+            </div>
+          </div>
+
+          <div style="margin-top:16px;">
+            <h3>Notes</h3>
+            <div class="note-box" id="notesBox">Aucune note.</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <h2>Documents du client sélectionné</h2>
+        <div class="muted">Les fichiers sont stockés dans le bucket Supabase <strong>Documents</strong>.</div>
+
+        <div class="doc-tools" style="margin-top:14px;">
+          <input type="file" id="docInput" multiple />
+          <button class="btn-primary" id="uploadDocBtn">Importer des fichiers</button>
+        </div>
+
+        <div id="docMsg" class="msg">Sélectionne un client pour gérer ses documents.</div>
+        <div id="docList" class="doc-list" style="margin-top:12px;"></div>
+      </div>
+    </div>
+  </div>
 
   <script>
     const SUPABASE_URL = "https://bbghzarbawbugrmwlxjj.supabase.co";
     const SUPABASE_ANON_KEY = "sb_publishable_Rfr6TeYwOI3jIseYVT70BQ_fYCgCD3p";
+    const clientDb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-    const client = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    let clients = [];
+    let selectedClientId = null;
+    let editingId = null;
 
-    const fileInput = document.getElementById("fileInput");
-    const uploadBtn = document.getElementById("uploadBtn");
-    const listEl = document.getElementById("fileList");
-    const msg = document.getElementById("msg");
+    const $ = (id) => document.getElementById(id);
 
-    function setMsg(t) {
-      msg.textContent = t;
+    function setMsg(t) { $("msg").textContent = t; }
+    function setDocMsg(t) { $("docMsg").textContent = t; }
+
+    function resetForm() {
+      editingId = null;
+      $("company").value = "";
+      $("first_name").value = "";
+      $("last_name").value = "";
+      $("email").value = "";
+      $("phone").value = "";
+      $("address").value = "";
+      $("status").value = "Nouveau prospect";
+      $("assigned_to").value = "";
+      $("supplier").value = "";
+      $("supplier_other").value = "";
+      $("meter_type").value = "";
+      $("tariff_category").value = "";
+      $("contract_type").value = "";
+      $("base_price").value = "";
+      $("price_hp").value = "";
+      $("price_hc").value = "";
+      $("price_hpe").value = "";
+      $("price_hph").value = "";
+      $("price_hce").value = "";
+      $("price_hch").value = "";
+      $("pdl_number").value = "";
+      $("subscribed_power").value = "";
+      $("contract_end_date").value = "";
+      $("annual_budget").value = "";
+      $("notes").value = "";
+      $("acd_signed").checked = false;
+      $("deleteBtn").classList.add("hidden");
+      updateSupplierOther();
+      updateContractFields();
+      setMsg("Formulaire réinitialisé.");
     }
 
-    uploadBtn.addEventListener("click", async () => {
-      const file = fileInput.files[0];
-      if (!file) return setMsg("Choisis un fichier.");
+    function updateSupplierOther() {
+      $("supplier_other_wrap").classList.toggle("hidden", $("supplier").value !== "Autres");
+    }
 
-      setMsg("Upload en cours...");
+    function updateContractFields() {
+      const type = $("contract_type").value;
+      $("prices_fixed").classList.toggle("hidden", type !== "Fixe");
+      $("prices_hphc").classList.toggle("hidden", type !== "HP / HC");
+      $("prices_4").classList.toggle("hidden", type !== "4 plages");
+    }
 
-      const filePath = "files/" + Date.now() + "-" + file.name;
-
-      const { error } = await client.storage
-        .from("Documents")
-        .upload(filePath, file);
+    async function loadClients(selectAfter = null) {
+      setMsg("Chargement des clients...");
+      const { data, error } = await clientDb
+        .from("clients")
+        .select("*")
+        .order("created_at", { ascending: false });
 
       if (error) {
-        setMsg("Erreur upload: " + error.message);
+        setMsg("Erreur chargement clients: " + error.message);
         return;
       }
 
-      setMsg("Upload réussi !");
-      fileInput.value = "";
-      loadFiles();
-    });
+      clients = data || [];
+      renderClientList();
 
-    async function loadFiles() {
-      setMsg("Chargement des fichiers...");
-      const { data, error } = await client.storage
-        .from("Documents")
-        .list("files");
+      if (selectAfter) {
+        selectedClientId = selectAfter;
+      } else if (selectedClientId && !clients.find(c => c.id === selectedClientId)) {
+        selectedClientId = null;
+      }
 
-      if (error) {
-        setMsg("Erreur liste: " + error.message);
+      renderSelectedClient();
+      setMsg("Clients chargés.");
+    }
+
+    function renderClientList() {
+      const q = $("search").value.toLowerCase().trim();
+      const list = $("clientList");
+      list.innerHTML = "";
+
+      const filtered = clients.filter(c =>
+        (c.company || "").toLowerCase().includes(q) ||
+        (c.first_name || "").toLowerCase().includes(q) ||
+        (c.last_name || "").toLowerCase().includes(q)
+      );
+
+      if (!filtered.length) {
+        list.innerHTML = '<div class="muted">Aucun client.</div>';
         return;
       }
 
-      listEl.innerHTML = "";
+      filtered.forEach(c => {
+        const div = document.createElement("div");
+        div.className = "client-card" + (selectedClientId === c.id ? " active" : "");
+        div.innerHTML = `
+          <h4>${c.company || "Sans nom"}</h4>
+          <div class="muted">${[c.first_name, c.last_name].filter(Boolean).join(" ") || "Pas de contact"}</div>
+          <div style="margin-top:8px;"><span class="badge">${c.status || "Sans statut"}</span></div>
+        `;
+        div.addEventListener("click", () => {
+          selectedClientId = c.id;
+          renderClientList();
+          renderSelectedClient();
+          fillForm(c);
+        });
+        list.appendChild(div);
+      });
+    }
+
+    function fillForm(c) {
+      editingId = c.id;
+      $("company").value = c.company || "";
+      $("first_name").value = c.first_name || "";
+      $("last_name").value = c.last_name || "";
+      $("email").value = c.email || "";
+      $("phone").value = c.phone || "";
+      $("address").value = c.address || "";
+      $("status").value = c.status || "Nouveau prospect";
+      $("assigned_to").value = c.assigned_to || "";
+      $("supplier").value = c.supplier || "";
+      $("supplier_other").value = c.supplier_other || "";
+      $("meter_type").value = c.meter_type || "";
+      $("tariff_category").value = c.tariff_category || "";
+      $("contract_type").value = c.contract_type || "";
+      $("base_price").value = c.base_price || "";
+      $("price_hp").value = c.price_hp || "";
+      $("price_hc").value = c.price_hc || "";
+      $("price_hpe").value = c.price_hpe || "";
+      $("price_hph").value = c.price_hph || "";
+      $("price_hce").value = c.price_hce || "";
+      $("price_hch").value = c.price_hch || "";
+      $("pdl_number").value = c.pdl_number || "";
+      $("subscribed_power").value = c.subscribed_power || "";
+      $("contract_end_date").value = c.contract_end_date || "";
+      $("annual_budget").value = c.annual_budget || "";
+      $("notes").value = c.notes || "";
+      $("acd_signed").checked = !!c.acd_signed;
+      $("deleteBtn").classList.remove("hidden");
+      updateSupplierOther();
+      updateContractFields();
+      setMsg("Client chargé dans le formulaire.");
+    }
+
+    function renderSelectedClient() {
+      const c = clients.find(x => x.id === selectedClientId);
+
+      if (!c) {
+        $("selectedTitle").textContent = "Aucun client sélectionné";
+        $("selectedSubtitle").textContent = "Choisis un client dans la colonne de gauche.";
+        $("selectedContent").classList.add("hidden");
+        $("docList").innerHTML = "";
+        setDocMsg("Sélectionne un client pour gérer ses documents.");
+        return;
+      }
+
+      $("selectedTitle").textContent = c.company || "Client";
+      $("selectedSubtitle").textContent = [c.first_name, c.last_name, c.email].filter(Boolean).join(" • ");
+      $("selectedContent").classList.remove("hidden");
+
+      const supplier = c.supplier === "Autres" ? (c.supplier_other || "Autres") : (c.supplier || "-");
+      let contractLabel = c.contract_type || "-";
+      if (c.contract_type === "Fixe") contractLabel += c.base_price ? " • " + c.base_price : "";
+      if (c.contract_type === "HP / HC") contractLabel += ` • HP ${c.price_hp || "-"} / HC ${c.price_hc || "-"}`;
+      if (c.contract_type === "4 plages") contractLabel += ` • HPE ${c.price_hpe || "-"} / HPH ${c.price_hph || "-"} / HCE ${c.price_hce || "-"} / HCH ${c.price_hch || "-"}`;
+
+      $("sum_status").textContent = c.status || "-";
+      $("sum_supplier").textContent = supplier;
+      $("sum_contract").textContent = contractLabel;
+      $("notesBox").textContent = c.notes || "Aucune note.";
+
+      loadDocuments(c.id);
+    }
+
+    async function saveClient() {
+      const company = $("company").value.trim();
+      if (!company) {
+        setMsg("Le nom de l'entreprise est obligatoire.");
+        return;
+      }
+
+      const payload = {
+        company,
+        first_name: $("first_name").value.trim(),
+        last_name: $("last_name").value.trim(),
+        email: $("email").value.trim(),
+        phone: $("phone").value.trim(),
+        address: $("address").value.trim(),
+        status: $("status").value,
+        assigned_to: $("assigned_to").value,
+        annual_budget: $("annual_budget").value.trim(),
+        notes: $("notes").value.trim(),
+        acd_signed: $("acd_signed").checked,
+        supplier: $("supplier").value,
+        supplier_other: $("supplier_other").value.trim(),
+        meter_type: $("meter_type").value,
+        tariff_category: $("tariff_category").value,
+        contract_type: $("contract_type").value,
+        base_price: $("base_price").value.trim(),
+        price_hp: $("price_hp").value.trim(),
+        price_hc: $("price_hc").value.trim(),
+        price_hpe: $("price_hpe").value.trim(),
+        price_hph: $("price_hph").value.trim(),
+        price_hce: $("price_hce").value.trim(),
+        price_hch: $("price_hch").value.trim(),
+        pdl_number: $("pdl_number").value.trim(),
+        subscribed_power: $("subscribed_power").value.trim(),
+        contract_end_date: $("contract_end_date").value || null
+      };
+
+      setMsg("Enregistrement...");
+      if (editingId) {
+        const { error } = await clientDb.from("clients").update(payload).eq("id", editingId);
+        if (error) {
+          setMsg("Erreur modification client: " + error.message);
+          return;
+        }
+        selectedClientId = editingId;
+        await loadClients(editingId);
+        setMsg("Client modifié avec succès.");
+      } else {
+        const { data, error } = await clientDb.from("clients").insert([payload]).select().single();
+        if (error) {
+          setMsg("Erreur création client: " + error.message);
+          return;
+        }
+        selectedClientId = data.id;
+        await loadClients(data.id);
+        fillForm(data);
+        setMsg("Client créé avec succès.");
+      }
+    }
+
+    async function deleteClient() {
+      if (!editingId) return;
+      const ok = confirm("Supprimer ce client ? Les documents resteront dans le bucket si tu ne les supprimes pas manuellement.");
+      if (!ok) return;
+
+      setMsg("Suppression du client...");
+      const { error } = await clientDb.from("clients").delete().eq("id", editingId);
+      if (error) {
+        setMsg("Erreur suppression client: " + error.message);
+        return;
+      }
+
+      if (selectedClientId === editingId) selectedClientId = null;
+      resetForm();
+      await loadClients();
+      setMsg("Client supprimé.");
+    }
+
+    async function loadDocuments(clientId) {
+      setDocMsg("Chargement des documents...");
+      const { data, error } = await clientDb.storage.from("Documents").list(clientId);
+
+      if (error) {
+        setDocMsg("Erreur documents: " + error.message);
+        return;
+      }
+
+      const list = $("docList");
+      list.innerHTML = "";
 
       if (!data || data.length === 0) {
-        setMsg("Aucun fichier.");
+        setDocMsg("Aucun document sur ce client.");
         return;
       }
 
-      setMsg("Fichiers chargés.");
+      setDocMsg("Documents chargés.");
 
-      data.forEach((file) => {
+      data.forEach(file => {
+        const sizeBytes = file.metadata && file.metadata.size ? file.metadata.size : 0;
+        const sizeMo = sizeBytes ? (sizeBytes / 1024 / 1024).toFixed(2) + " Mo" : "-";
         const div = document.createElement("div");
-        div.className = "card";
-
+        div.className = "doc-item";
         div.innerHTML = `
-          <span>${file.name}</span>
           <div>
-            <button data-open="${file.name}">Ouvrir</button>
-            <button data-delete="${file.name}">Supprimer</button>
+            <div class="doc-name">${file.name}</div>
+            <div class="doc-meta">${sizeMo}</div>
+          </div>
+          <div>
+            <button class="btn-secondary" data-open="${file.name}">Ouvrir</button>
+            <button class="btn-danger" data-delete="${file.name}">Supprimer</button>
           </div>
         `;
-
-        listEl.appendChild(div);
+        list.appendChild(div);
       });
 
-      // OUVRIR
-      document.querySelectorAll("[data-open]").forEach((btn) => {
+      list.querySelectorAll("[data-open]").forEach(btn => {
         btn.addEventListener("click", async () => {
           const name = btn.dataset.open;
-
-          const { data, error } = await client.storage
+          const { data, error } = await clientDb.storage
             .from("Documents")
-            .createSignedUrl("files/" + name, 3600);
+            .createSignedUrl(`${clientId}/${name}`, 3600);
 
           if (error) {
-            setMsg("Erreur ouverture: " + error.message);
+            setDocMsg("Erreur ouverture: " + error.message);
             return;
           }
 
@@ -118,28 +762,65 @@
         });
       });
 
-      // DELETE
-      document.querySelectorAll("[data-delete]").forEach((btn) => {
+      list.querySelectorAll("[data-delete]").forEach(btn => {
         btn.addEventListener("click", async () => {
           const name = btn.dataset.delete;
+          const ok = confirm("Supprimer ce document ?");
+          if (!ok) return;
 
-          const { error } = await client.storage
+          const { error } = await clientDb.storage
             .from("Documents")
-            .remove(["files/" + name]);
+            .remove([`${clientId}/${name}`]);
 
           if (error) {
-            setMsg("Erreur suppression: " + error.message);
+            setDocMsg("Erreur suppression: " + error.message);
             return;
           }
 
-          setMsg("Fichier supprimé.");
-          loadFiles();
+          setDocMsg("Document supprimé.");
+          loadDocuments(clientId);
         });
       });
     }
 
-    loadFiles();
-  </script>
+    async function uploadDocuments() {
+      if (!selectedClientId) {
+        setDocMsg("Sélectionne d'abord un client.");
+        return;
+      }
 
+      const files = $("docInput").files;
+      if (!files || !files.length) {
+        setDocMsg("Choisis au moins un fichier.");
+        return;
+      }
+
+      setDocMsg("Upload en cours...");
+
+      for (const file of files) {
+        const path = `${selectedClientId}/${Date.now()}-${file.name}`;
+        const { error } = await clientDb.storage.from("Documents").upload(path, file, { upsert: true });
+        if (error) {
+          setDocMsg("Erreur upload: " + error.message);
+          return;
+        }
+      }
+
+      $("docInput").value = "";
+      setDocMsg("Document(s) importé(s) avec succès.");
+      loadDocuments(selectedClientId);
+    }
+
+    $("saveBtn").addEventListener("click", saveClient);
+    $("resetBtn").addEventListener("click", resetForm);
+    $("deleteBtn").addEventListener("click", deleteClient);
+    $("supplier").addEventListener("change", updateSupplierOther);
+    $("contract_type").addEventListener("change", updateContractFields);
+    $("search").addEventListener("input", renderClientList);
+    $("uploadDocBtn").addEventListener("click", uploadDocuments);
+
+    resetForm();
+    loadClients();
+  </script>
 </body>
 </html>
