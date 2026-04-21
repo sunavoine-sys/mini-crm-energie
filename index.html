@@ -607,13 +607,6 @@
 
     <div class="right-col">
       <div class="panel">
-        <div id="selectedEmpty" class="empty-state">
-          <div>
-            <h3>Sélectionne une fiche client</h3>
-            <div class="muted">Tu retrouveras ici le résumé, les documents, les notes et les actions rapides.</div>
-          </div>
-        </div>
-
         <div id="selectedWrap" class="hidden">
           <div class="panel-header">
             <div>
@@ -641,7 +634,12 @@
             </div>
           </div>
 
-          <div class="section-tabs" style="margin-top:16px;">
+          <div style="margin-top:16px;">
+            <h3 style="margin-bottom:10px;">Tags dossier</h3>
+            <div id="tagChips" class="section-tabs" style="margin-bottom:14px;"></div>
+          </div>
+
+          <div class="section-tabs" style="margin-top:6px;">
             <button class="tab-btn active" data-tab="infos">Infos</button>
             <button class="tab-btn" data-tab="documents">Documents</button>
             <button class="tab-btn" data-tab="notes">Notes</button>
@@ -855,7 +853,19 @@
 
         <div>
           <label>Notes</label>
-          <textarea id="notes"></textarea>
+            <textarea id="notes"></textarea>
+          </div>
+
+          <div>
+            <label>Tags dossier</label>
+            <div id="tagEditor" class="section-tabs">
+              <button type="button" class="tab-btn" data-tag="En attente de facture">En attente de facture</button>
+              <button type="button" class="tab-btn" data-tag="Factures reçues">Factures reçues</button>
+              <button type="button" class="tab-btn" data-tag="ACD signé">ACD signé</button>
+              <button type="button" class="tab-btn" data-tag="Offre placée">Offre placée</button>
+              <button type="button" class="tab-btn" data-tag="Contrat signé">Contrat signé</button>
+            </div>
+            <input id="client_tags" class="hidden" />
         </div>
 
         <div>
@@ -924,6 +934,8 @@
       $("annual_budget").value = "";
       $("notes").value = "";
       $("acd_signed").checked = false;
+      $("client_tags").value = "";
+      refreshTagEditor();
       updateSupplierOther();
       updateContractFields();
       setMsg("Formulaire réinitialisé.");
@@ -1030,10 +1042,51 @@
       $("annual_budget").value = c.annual_budget || "";
       $("notes").value = c.notes || "";
       $("acd_signed").checked = !!c.acd_signed;
+      $("client_tags").value = c.client_tags || "";
+      refreshTagEditor();
       updateSupplierOther();
       updateContractFields();
       setMsg("Client chargé dans le formulaire.");
       openModal("edit");
+    }
+
+    function parseTags(value) {
+      return (value || "")
+        .split(",")
+        .map(t => t.trim())
+        .filter(Boolean);
+    }
+
+    function refreshTagEditor() {
+      const selected = parseTags($("client_tags").value);
+      document.querySelectorAll('#tagEditor [data-tag]').forEach(btn => {
+        btn.classList.toggle('active', selected.includes(btn.dataset.tag));
+      });
+    }
+
+    function toggleEditorTag(tag) {
+      const current = parseTags($("client_tags").value);
+      const next = current.includes(tag)
+        ? current.filter(t => t !== tag)
+        : [...current, tag];
+      $("client_tags").value = next.join(', ');
+      refreshTagEditor();
+    }
+
+    function renderClientTags(c) {
+      const wrap = $("tagChips");
+      wrap.innerHTML = "";
+      const tags = parseTags(c.client_tags);
+      if (!tags.length) {
+        wrap.innerHTML = '<span class="muted">Aucun tag pour ce dossier.</span>';
+        return;
+      }
+      tags.forEach(tag => {
+        const chip = document.createElement('span');
+        chip.className = 'tab-btn active';
+        chip.textContent = tag;
+        wrap.appendChild(chip);
+      });
     }
 
     function renderSelectedClient() {
@@ -1064,6 +1117,7 @@
       $("sum_supplier").textContent = supplier;
       $("sum_contract").textContent = contractLabel;
       $("notesBox").textContent = c.notes || "Aucune note.";
+      renderClientTags(c);
       $("infoBoxA").innerHTML = `<strong>Contact</strong><br>${[c.first_name, c.last_name].filter(Boolean).join(" ") || "-"}<br><br><strong>Email</strong><br>${c.email || "-"}<br><br><strong>Téléphone</strong><br>${c.phone || "-"}`;
       $("infoBoxB").innerHTML = `<strong>Adresse</strong><br>${c.address || "-"}<br><br><strong>PDL</strong><br>${c.pdl_number || "-"}<br><br><strong>Budget annuel</strong><br>${c.annual_budget || "-"}`;
 
@@ -1078,6 +1132,7 @@
       }
 
       const payload = {
+        client_tags: $("client_tags").value.trim(),
         company,
         first_name: $("first_name").value.trim(),
         last_name: $("last_name").value.trim(),
@@ -1300,6 +1355,10 @@
       document.querySelectorAll('.tab-panel').forEach(panel => panel.classList.add('hidden'));
       $(`tab_${tab}`).classList.remove('hidden');
     }
+
+    document.querySelectorAll('#tagEditor [data-tag]').forEach(btn => {
+      btn.addEventListener('click', () => toggleEditorTag(btn.dataset.tag));
+    });
 
     $("openCreateBtn").addEventListener("click", () => {
       resetForm();
