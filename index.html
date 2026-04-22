@@ -477,6 +477,75 @@
       background: white;
     }
 
+    .agenda-grid {
+      display: grid;
+      grid-template-columns: 360px 1fr;
+      gap: 16px;
+      align-items: start;
+    }
+
+    .agenda-card {
+      background: rgba(255,255,255,0.035);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 18px;
+      padding: 16px;
+    }
+
+    .agenda-headline {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+
+    .agenda-list {
+      display: grid;
+      gap: 10px;
+      min-height: 60px;
+    }
+
+    .agenda-item {
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 16px;
+      padding: 13px;
+      background: rgba(255,255,255,0.03);
+      display: flex;
+      justify-content: space-between;
+      gap: 14px;
+      align-items: flex-start;
+    }
+
+    .agenda-item.done { opacity: 0.62; }
+
+    .agenda-date {
+      min-width: 115px;
+      border-radius: 14px;
+      padding: 10px 12px;
+      background: linear-gradient(135deg, rgba(78,242,255,0.14), rgba(154,108,255,0.12));
+      border: 1px solid rgba(78,242,255,0.15);
+      font-size: 12px;
+      font-weight: 800;
+      color: #dffcff;
+    }
+
+    .agenda-main { flex: 1; }
+    .agenda-main h4 { margin: 0 0 6px 0; font-size: 15px; }
+    .agenda-main p {
+      margin: 6px 0 0 0;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.45;
+      white-space: pre-wrap;
+    }
+
+    .agenda-main .mini-row {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+      margin-top: 6px;
+    }
+
     .floating-orb {
       position: fixed;
       width: 260px;
@@ -550,6 +619,7 @@
       .summary { grid-template-columns: 1fr; }
       .sticky-panel { position: relative; top: 0; height: auto; }
       .preview-box iframe { height: 420px; }
+      .agenda-grid { grid-template-columns: 1fr; }
     }
   </style>
 </head>
@@ -650,6 +720,73 @@
           <div id="tab_notes" class="tab-panel hidden">
             <div class="note-box" id="notesBox">Aucune note.</div>
           </div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-header">
+          <div>
+            <h2>Agenda & relances</h2>
+            <div class="muted">Une vue stylée des rappels du client sélectionné et des prochaines échéances.</div>
+          </div>
+          <span class="badge">Planning</span>
+        </div>
+
+        <div class="agenda-grid">
+          <div class="agenda-card">
+            <h3 style="margin-bottom:10px;">Nouveau rappel</h3>
+            <div class="grid">
+              <div>
+                <label>Titre</label>
+                <input id="rappel_title" placeholder="Ex: Relancer pour l'offre" />
+              </div>
+              <div class="grid-2">
+                <div>
+                  <label>Date</label>
+                  <input id="rappel_date" type="date" />
+                </div>
+                <div>
+                  <label>Heure</label>
+                  <input id="rappel_heure" type="time" />
+                </div>
+              </div>
+              <div>
+                <label>Type</label>
+                <select id="rappel_type">
+                  <option value="Relance">Relance</option>
+                  <option value="Appel">Appel</option>
+                  <option value="Offre">Offre</option>
+                  <option value="Rendez-vous">Rendez-vous</option>
+                  <option value="Contrat">Contrat</option>
+                  <option value="Autre">Autre</option>
+                </select>
+              </div>
+              <div>
+                <label>Note</label>
+                <textarea id="rappel_notes" placeholder="Détail rapide du rappel..."></textarea>
+              </div>
+              <div class="actions">
+                <button class="btn-primary" id="saveRappelBtn">Ajouter le rappel</button>
+              </div>
+            </div>
+            <div id="rappelMsg" class="msg">Sélectionne un client pour ajouter un rappel.</div>
+          </div>
+
+          <div class="agenda-card">
+            <div class="agenda-headline">
+              <h3>Échéances du client</h3>
+              <span class="badge" id="rappelsCountBadge">0</span>
+            </div>
+            <div id="rappelsClientList" class="agenda-list"></div>
+          </div>
+        </div>
+
+        <div class="agenda-card" style="margin-top:16px;">
+          <div class="agenda-headline">
+            <h3>À venir</h3>
+            <span class="badge">Global</span>
+          </div>
+          <div id="rappelsGlobalList" class="agenda-list"></div>
         </div>
       </div>
     </div>
@@ -880,6 +1017,7 @@
     function setMsg(t) { $("msg").textContent = t; }
     function setDocMsg(t) { $("docMsg").textContent = t; }
     function setSidebarMsg(t) { $("sidebarMsg").textContent = t; }
+    function setRappelMsg(t) { $("rappelMsg").textContent = t; }
 
     function getStoredTagsMap() {
       try {
@@ -991,6 +1129,14 @@
       setMsg("Formulaire réinitialisé.");
     }
 
+    function resetRappelForm() {
+      $("rappel_title").value = "";
+      $("rappel_date").value = "";
+      $("rappel_heure").value = "";
+      $("rappel_type").value = "Relance";
+      $("rappel_notes").value = "";
+    }
+
     function updateSupplierOther() {
       $("supplier_other_wrap").classList.toggle("hidden", $("supplier").value !== "Autres");
     }
@@ -1000,6 +1146,12 @@
       $("prices_fixed").classList.toggle("hidden", type !== "Fixe");
       $("prices_hphc").classList.toggle("hidden", type !== "HP / HC");
       $("prices_4").classList.toggle("hidden", type !== "4 plages");
+    }
+
+    function formatDateFr(dateStr) {
+      if (!dateStr) return "Sans date";
+      const d = new Date(dateStr + 'T00:00:00');
+      return d.toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' });
     }
 
     async function loadClients(selectAfter = null) {
@@ -1026,7 +1178,8 @@
       }
 
       renderClientList();
-      renderSelectedClient();
+      await renderSelectedClient();
+      await loadGlobalRappels();
       setSidebarMsg("Clients chargés.");
     }
 
@@ -1061,10 +1214,10 @@
             ${tags.map(tag => `<span class="badge">${tag}</span>`).join("")}
           </div>
         `;
-        div.addEventListener("click", () => {
+        div.addEventListener("click", async () => {
           selectedClientId = c.id;
           renderClientList();
-          renderSelectedClient();
+          await renderSelectedClient();
         });
         list.appendChild(div);
       });
@@ -1106,7 +1259,7 @@
       openModal("edit");
     }
 
-    function renderSelectedClient() {
+    async function renderSelectedClient() {
       const c = clients.find(x => x.id === selectedClientId);
 
       if (!c) {
@@ -1123,6 +1276,9 @@
         setDocMsg("Sélectionne un client pour gérer ses documents.");
         $("previewWrap").classList.add("hidden");
         $("previewFrame").src = "about:blank";
+        $("rappelsClientList").innerHTML = '<div class="muted">Aucun rappel.</div>';
+        $("rappelsCountBadge").textContent = '0';
+        setRappelMsg("Sélectionne un client pour ajouter un rappel.");
         return;
       }
 
@@ -1142,7 +1298,9 @@
       renderClientTags(c);
       $("infoBoxA").innerHTML = `<strong>Contact</strong><br>${[c.first_name, c.last_name].filter(Boolean).join(" ") || "-"}<br><br><strong>Email</strong><br>${c.email || "-"}<br><br><strong>Téléphone</strong><br>${c.phone || "-"}`;
       $("infoBoxB").innerHTML = `<strong>Adresse</strong><br>${c.address || "-"}<br><br><strong>PDL</strong><br>${c.pdl_number || "-"}<br><br><strong>Budget annuel</strong><br>${c.annual_budget || "-"}`;
-      loadDocuments(c.id);
+      await loadDocuments(c.id);
+      await loadClientRappels(c.id);
+      setRappelMsg(`Rappels prêts pour ${c.company}.`);
     }
 
     async function saveClient() {
@@ -1214,6 +1372,15 @@
 
       setSidebarMsg("Suppression du client et des documents...");
 
+      const { error: deleteRappelsError } = await clientDb
+        .from("rappels")
+        .delete()
+        .eq("client_id", selectedClientId);
+      if (deleteRappelsError) {
+        setSidebarMsg("Erreur suppression rappels: " + deleteRappelsError.message);
+        return;
+      }
+
       const { data: docs, error: listError } = await clientDb.storage
         .from("Documents")
         .list(selectedClientId);
@@ -1259,12 +1426,13 @@
       selectedClientId = null;
       editingId = null;
       resetForm();
+      resetRappelForm();
       await loadClients();
       $("docList").innerHTML = "";
       setDocMsg("Sélectionne un client pour gérer ses documents.");
       $("previewWrap").classList.add("hidden");
       $("previewFrame").src = "about:blank";
-      setSidebarMsg("Client et documents supprimés.");
+      setSidebarMsg("Client, documents et rappels supprimés.");
     }
 
     async function loadDocuments(clientId) {
@@ -1373,6 +1541,146 @@
       loadDocuments(selectedClientId);
     }
 
+    async function saveRappel() {
+      if (!selectedClientId) {
+        setRappelMsg("Sélectionne d'abord un client.");
+        return;
+      }
+
+      const title = $("rappel_title").value.trim();
+      const date_rappel = $("rappel_date").value;
+      const heure_rappel = $("rappel_heure").value;
+      const type_rappel = $("rappel_type").value;
+      const notes = $("rappel_notes").value.trim();
+
+      if (!title || !date_rappel) {
+        setRappelMsg("Le titre et la date sont obligatoires.");
+        return;
+      }
+
+      setRappelMsg("Ajout du rappel...");
+      const { error } = await clientDb
+        .from("rappels")
+        .insert([{
+          client_id: selectedClientId,
+          title,
+          date_rappel,
+          heure_rappel: heure_rappel || null,
+          type_rappel,
+          notes,
+          done: false
+        }]);
+
+      if (error) {
+        setRappelMsg("Erreur ajout rappel: " + error.message);
+        return;
+      }
+
+      resetRappelForm();
+      setRappelMsg("Rappel ajouté avec succès.");
+      await loadClientRappels(selectedClientId);
+      await loadGlobalRappels();
+    }
+
+    async function loadClientRappels(clientId) {
+      const list = $("rappelsClientList");
+      list.innerHTML = '<div class="muted">Chargement...</div>';
+
+      const { data, error } = await clientDb
+        .from("rappels")
+        .select("*")
+        .eq("client_id", clientId)
+        .order("date_rappel", { ascending: true });
+
+      if (error) {
+        list.innerHTML = `<div class="muted">Erreur rappels: ${error.message}</div>`;
+        return;
+      }
+
+      $("rappelsCountBadge").textContent = String((data || []).length);
+      list.innerHTML = "";
+
+      if (!data || !data.length) {
+        list.innerHTML = '<div class="muted">Aucun rappel pour ce client.</div>';
+        return;
+      }
+
+      data.forEach(r => {
+        const el = document.createElement('div');
+        el.className = 'agenda-item' + (r.done ? ' done' : '');
+        el.innerHTML = `
+          <div class="agenda-date">${formatDateFr(r.date_rappel)}<br>${r.heure_rappel || '--:--'}</div>
+          <div class="agenda-main">
+            <h4>${r.title}</h4>
+            <div class="mini-row"><span class="badge">${r.type_rappel || 'Relance'}</span>${r.done ? '<span class="badge">Fait</span>' : '<span class="badge">À faire</span>'}</div>
+            <p>${r.notes || 'Aucune note.'}</p>
+          </div>
+          <div class="actions" style="margin-top:0;">
+            <button class="btn-secondary btn-small" data-toggle-rappel="${r.id}">${r.done ? 'Réouvrir' : 'Terminé'}</button>
+            <button class="btn-danger btn-small" data-delete-rappel="${r.id}">Suppr.</button>
+          </div>
+        `;
+        list.appendChild(el);
+      });
+
+      list.querySelectorAll('[data-toggle-rappel]').forEach(btn => {
+        btn.addEventListener('click', async () => {
+          const rappel = data.find(x => x.id === btn.dataset.toggleRappel);
+          if (!rappel) return;
+          await clientDb.from('rappels').update({ done: !rappel.done }).eq('id', rappel.id);
+          await loadClientRappels(clientId);
+          await loadGlobalRappels();
+        });
+      });
+
+      list.querySelectorAll('[data-delete-rappel]').forEach(btn => {
+        btn.addEventListener('click', async () => {
+          const ok = confirm('Supprimer ce rappel ?');
+          if (!ok) return;
+          await clientDb.from('rappels').delete().eq('id', btn.dataset.deleteRappel);
+          await loadClientRappels(clientId);
+          await loadGlobalRappels();
+        });
+      });
+    }
+
+    async function loadGlobalRappels() {
+      const list = $("rappelsGlobalList");
+      list.innerHTML = '<div class="muted">Chargement...</div>';
+
+      const { data, error } = await clientDb
+        .from('rappels')
+        .select('*, clients(company)')
+        .order('date_rappel', { ascending: true })
+        .limit(10);
+
+      if (error) {
+        list.innerHTML = `<div class="muted">Erreur agenda: ${error.message}</div>`;
+        return;
+      }
+
+      list.innerHTML = '';
+      if (!data || !data.length) {
+        list.innerHTML = '<div class="muted">Aucun rappel à venir.</div>';
+        return;
+      }
+
+      data.forEach(r => {
+        const el = document.createElement('div');
+        el.className = 'agenda-item' + (r.done ? ' done' : '');
+        const company = r.clients?.company || 'Client';
+        el.innerHTML = `
+          <div class="agenda-date">${formatDateFr(r.date_rappel)}<br>${r.heure_rappel || '--:--'}</div>
+          <div class="agenda-main">
+            <h4>${r.title}</h4>
+            <div class="mini-row"><span class="badge">${company}</span><span class="badge">${r.type_rappel || 'Relance'}</span></div>
+            <p>${r.notes || 'Aucune note.'}</p>
+          </div>
+        `;
+        list.appendChild(el);
+      });
+    }
+
     function setActiveTab(tab) {
       document.querySelectorAll('.tab-switch').forEach(btn => btn.classList.toggle('active', btn.dataset.tab === tab));
       document.querySelectorAll('.tab-panel').forEach(panel => panel.classList.add('hidden'));
@@ -1401,6 +1709,7 @@
     $("contract_type").addEventListener("change", updateContractFields);
     $("search").addEventListener("input", renderClientList);
     $("uploadDocBtn").addEventListener("click", uploadDocuments);
+    $("saveRappelBtn").addEventListener("click", saveRappel);
     $("editSelectedBtn").addEventListener("click", () => {
       const c = clients.find(x => x.id === selectedClientId);
       if (!c) return;
@@ -1409,6 +1718,7 @@
     $("deleteSelectedBtn").addEventListener("click", deleteClient);
 
     resetForm();
+    resetRappelForm();
     setActiveTab('infos');
     loadClients();
   </script>
