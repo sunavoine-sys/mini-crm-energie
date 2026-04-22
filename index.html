@@ -1055,6 +1055,14 @@
     let activeFilter = 'ALL';
 
     const $ = (id) => document.getElementById(id);
+    function openModal(mode = 'create') {
+  $('clientModalBackdrop').classList.add('show');
+  $('modalTitle').textContent = mode === 'edit' ? 'Modifier le client' : 'Nouveau client';
+}
+
+function closeModal() {
+  $('clientModalBackdrop').classList.remove('show');
+}
 
     function setMsg(t) { $("msg").textContent = t; }
     function setDocMsg(t) { $("docMsg").textContent = t; }
