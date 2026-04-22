@@ -321,6 +321,32 @@
       letter-spacing: 0.04em;
     }
 
+    .filters {
+      display: flex;
+      gap: 8px;
+      margin-top: 10px;
+      flex-wrap: wrap;
+    }
+
+    .filter-chip {
+      padding: 8px 12px;
+      border-radius: 999px;
+      border: 1px solid rgba(255,255,255,0.08);
+      background: rgba(255,255,255,0.04);
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 800;
+      cursor: pointer;
+      transition: 0.18s ease;
+    }
+
+    .filter-chip.active {
+      color: #08111f;
+      background: linear-gradient(135deg, var(--cyan), #aefbff);
+      box-shadow: 0 10px 24px rgba(78,242,255,0.2);
+      border-color: transparent;
+    }
+
     .right-col {
       display: grid;
       gap: 20px;
@@ -653,7 +679,17 @@
         <span class="badge" id="clientCountBadge">0</span>
       </div>
 
-      <input id="search" placeholder="Rechercher une entreprise..." />
+      <input id="search" placeholder="Rechercher une entreprise, un contact ou un SIRET..." />
+
+      <div class="filters" id="clientFilters">
+        <button class="filter-chip active" data-filter="ALL">Tous</button>
+        <button class="filter-chip" data-filter="En attente de facture">En attente</button>
+        <button class="filter-chip" data-filter="Factures reçues">Factures</button>
+        <button class="filter-chip" data-filter="ACD signé">ACD signé</button>
+        <button class="filter-chip" data-filter="Offre placée">Offre</button>
+        <button class="filter-chip" data-filter="Contrat signé">Contrat</button>
+      </div>
+
       <div id="clientList" class="client-list"></div>
       <div id="sidebarMsg" class="msg">Prêt.</div>
     </div>
@@ -701,7 +737,7 @@
           <div id="tab_infos" class="tab-panel">
             <div class="grid-2" style="margin-top:8px;">
               <div class="note-box" id="infoBoxA"><strong>Contact</strong><br>-<br><br><strong>Email</strong><br>-<br><br><strong>Téléphone</strong><br>-</div>
-              <div class="note-box" id="infoBoxB"><strong>Adresse</strong><br>-<br><br><strong>PDL</strong><br>-<br><br><strong>Budget annuel</strong><br>-</div>
+              <div class="note-box" id="infoBoxB"><strong>Adresse</strong><br>-<br><br><strong>PDL</strong><br>-<br><br><strong>Budget annuel</strong><br>-<br><br><strong>SIRET</strong><br>-</div>
             </div>
           </div>
 
@@ -830,9 +866,15 @@
           </div>
         </div>
 
-        <div>
-          <label>Adresse</label>
-          <input id="address" />
+        <div class="grid-2">
+          <div>
+            <label>SIRET</label>
+            <input id="siret" placeholder="Ex: 12345678901234" />
+          </div>
+          <div>
+            <label>Adresse</label>
+            <input id="address" />
+          </div>
         </div>
 
         <div class="grid-2">
@@ -1005,12 +1047,12 @@
   <script>
     const SUPABASE_URL = "https://bbghzarbawbugrmwlxjj.supabase.co";
     const SUPABASE_ANON_KEY = "sb_publishable_Rfr6TeYwOI3jIseYVT70BQ_fYCgCD3p";
-    const CLIENT_TAGS_KEY = "crm_client_tags_v3";
     const clientDb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
     let clients = [];
     let selectedClientId = null;
     let editingId = null;
+    let activeFilter = 'ALL';
 
     const $ = (id) => document.getElementById(id);
 
@@ -1019,45 +1061,17 @@
     function setSidebarMsg(t) { $("sidebarMsg").textContent = t; }
     function setRappelMsg(t) { $("rappelMsg").textContent = t; }
 
-    function getStoredTagsMap() {
-      try {
-        return JSON.parse(localStorage.getItem(CLIENT_TAGS_KEY) || "{}");
-      } catch {
-        return {};
-      }
-    }
-
-    function getClientTags(clientId) {
-      const map = getStoredTagsMap();
-      return Array.isArray(map[clientId]) ? map[clientId] : [];
-    }
-
-    function saveClientTags(clientId, tags) {
-      const map = getStoredTagsMap();
-      map[clientId] = tags;
-      localStorage.setItem(CLIENT_TAGS_KEY, JSON.stringify(map));
-    }
-
-    function removeClientTags(clientId) {
-      const map = getStoredTagsMap();
-      delete map[clientId];
-      localStorage.setItem(CLIENT_TAGS_KEY, JSON.stringify(map));
-    }
-
-    function openModal(mode = "create") {
-      $("clientModalBackdrop").classList.add("show");
-      $("modalTitle").textContent = mode === "edit" ? "Modifier le client" : "Nouveau client";
-    }
-
-    function closeModal() {
-      $("clientModalBackdrop").classList.remove("show");
-    }
-
     function parseTags(value) {
-      return (value || "")
-        .split(",")
+      return (value || '')
+        .split(',')
         .map(t => t.trim())
         .filter(Boolean);
+    }
+
+    function normalizeTags(value) {
+      if (Array.isArray(value)) return value.filter(Boolean);
+      if (typeof value === 'string') return parseTags(value);
+      return [];
     }
 
     function refreshTagEditor() {
@@ -1078,8 +1092,8 @@
 
     function renderClientTags(client) {
       const wrap = $("tagChips");
-      wrap.innerHTML = "";
-      const tags = client?.id ? getClientTags(client.id) : [];
+      wrap.innerHTML = '';
+      const tags = client ? normalizeTags(client.client_tags) : [];
 
       if (!tags.length) {
         wrap.innerHTML = '<span class="muted">Aucun tag pour ce dossier.</span>';
@@ -1087,86 +1101,95 @@
       }
 
       tags.forEach(tag => {
-        const chip = document.createElement("span");
-        chip.className = "tag-chip";
+        const chip = document.createElement('span');
+        chip.className = 'tag-chip';
         chip.textContent = tag;
         wrap.appendChild(chip);
       });
     }
 
+    function setFilter(filter) {
+      activeFilter = filter;
+      document.querySelectorAll('.filter-chip').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.filter === filter);
+      });
+      renderClientList();
+    }
+
     function resetForm() {
       editingId = null;
-      $("company").value = "";
-      $("first_name").value = "";
-      $("last_name").value = "";
-      $("email").value = "";
-      $("phone").value = "";
-      $("address").value = "";
-      $("status").value = "Nouveau prospect";
-      $("assigned_to").value = "";
-      $("supplier").value = "";
-      $("supplier_other").value = "";
-      $("meter_type").value = "";
-      $("tariff_category").value = "";
-      $("contract_type").value = "";
-      $("base_price").value = "";
-      $("price_hp").value = "";
-      $("price_hc").value = "";
-      $("price_hpe").value = "";
-      $("price_hph").value = "";
-      $("price_hce").value = "";
-      $("price_hch").value = "";
-      $("pdl_number").value = "";
-      $("subscribed_power").value = "";
-      $("contract_end_date").value = "";
-      $("annual_budget").value = "";
-      $("notes").value = "";
+      $("company").value = '';
+      $("first_name").value = '';
+      $("last_name").value = '';
+      $("email").value = '';
+      $("phone").value = '';
+      $("siret").value = '';
+      $("address").value = '';
+      $("status").value = 'Nouveau prospect';
+      $("assigned_to").value = '';
+      $("supplier").value = '';
+      $("supplier_other").value = '';
+      $("meter_type").value = '';
+      $("tariff_category").value = '';
+      $("contract_type").value = '';
+      $("base_price").value = '';
+      $("price_hp").value = '';
+      $("price_hc").value = '';
+      $("price_hpe").value = '';
+      $("price_hph").value = '';
+      $("price_hce").value = '';
+      $("price_hch").value = '';
+      $("pdl_number").value = '';
+      $("subscribed_power").value = '';
+      $("contract_end_date").value = '';
+      $("annual_budget").value = '';
+      $("notes").value = '';
       $("acd_signed").checked = false;
-      $("client_tags").value = "";
+      $("client_tags").value = '';
       refreshTagEditor();
       updateSupplierOther();
       updateContractFields();
-      setMsg("Formulaire réinitialisé.");
+      setMsg('Formulaire réinitialisé.');
     }
 
     function resetRappelForm() {
-      $("rappel_title").value = "";
-      $("rappel_date").value = "";
-      $("rappel_heure").value = "";
-      $("rappel_type").value = "Relance";
-      $("rappel_notes").value = "";
+      $("rappel_title").value = '';
+      $("rappel_date").value = '';
+      $("rappel_heure").value = '';
+      $("rappel_type").value = 'Relance';
+      $("rappel_notes").value = '';
     }
 
     function updateSupplierOther() {
-      $("supplier_other_wrap").classList.toggle("hidden", $("supplier").value !== "Autres");
+      $("supplier_other_wrap").classList.toggle('hidden', $("supplier").value !== 'Autres');
     }
 
     function updateContractFields() {
       const type = $("contract_type").value;
-      $("prices_fixed").classList.toggle("hidden", type !== "Fixe");
-      $("prices_hphc").classList.toggle("hidden", type !== "HP / HC");
-      $("prices_4").classList.toggle("hidden", type !== "4 plages");
+      $("prices_fixed").classList.toggle('hidden', type !== 'Fixe');
+      $("prices_hphc").classList.toggle('hidden', type !== 'HP / HC');
+      $("prices_4").classList.toggle('hidden', type !== '4 plages');
     }
 
     function formatDateFr(dateStr) {
-      if (!dateStr) return "Sans date";
+      if (!dateStr) return 'Sans date';
       const d = new Date(dateStr + 'T00:00:00');
       return d.toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' });
     }
 
     async function loadClients(selectAfter = null) {
-      setSidebarMsg("Chargement des clients...");
+      setSidebarMsg('Chargement des clients...');
       const { data, error } = await clientDb
-        .from("clients")
-        .select("*")
-        .order("created_at", { ascending: false });
+        .from('clients')
+        .select('*')
+        .order('created_at', { ascending: false });
 
       if (error) {
-        setSidebarMsg("Erreur chargement clients: " + error.message);
+        setSidebarMsg('Erreur chargement clients: ' + error.message);
         return;
       }
 
-      clients = data || [];
+      clients = (data || []).map(c => ({ ...c, client_tags: normalizeTags(c.client_tags) }));
       $("clientCountBadge").textContent = String(clients.length);
 
       if (selectAfter) {
@@ -1180,19 +1203,25 @@
       renderClientList();
       await renderSelectedClient();
       await loadGlobalRappels();
-      setSidebarMsg("Clients chargés.");
+      setSidebarMsg('Clients chargés.');
     }
 
     function renderClientList() {
       const q = $("search").value.toLowerCase().trim();
       const list = $("clientList");
-      list.innerHTML = "";
+      list.innerHTML = '';
 
-      const filtered = clients.filter(c =>
-        (c.company || "").toLowerCase().includes(q) ||
-        (c.first_name || "").toLowerCase().includes(q) ||
-        (c.last_name || "").toLowerCase().includes(q)
-      );
+      const filtered = clients.filter(c => {
+        const tags = normalizeTags(c.client_tags);
+        const matchSearch =
+          (c.company || '').toLowerCase().includes(q) ||
+          (c.first_name || '').toLowerCase().includes(q) ||
+          (c.last_name || '').toLowerCase().includes(q) ||
+          (c.siret || '').toLowerCase().includes(q);
+
+        const matchTag = activeFilter === 'ALL' || tags.includes(activeFilter);
+        return matchSearch && matchTag;
+      });
 
       if (!filtered.length) {
         list.innerHTML = '<div class="muted">Aucun client.</div>';
@@ -1200,21 +1229,22 @@
       }
 
       filtered.forEach(c => {
-        const tags = getClientTags(c.id).slice(0, 2);
-        const div = document.createElement("div");
-        div.className = "client-card" + (selectedClientId === c.id ? " active" : "");
+        const tags = normalizeTags(c.client_tags).slice(0, 2);
+        const div = document.createElement('div');
+        div.className = 'client-card' + (selectedClientId === c.id ? ' active' : '');
         div.innerHTML = `
           <div class="card-row">
-            <h4>${c.company || "Sans nom"}</h4>
-            <span class="badge">${c.status || "Sans statut"}</span>
+            <h4>${c.company || 'Sans nom'}</h4>
+            <span class="badge">${c.status || 'Sans statut'}</span>
           </div>
-          <div class="muted" style="margin-top:6px;">${[c.first_name, c.last_name].filter(Boolean).join(" ") || "Pas de contact"}</div>
-          <div class="muted" style="margin-top:8px;">${c.supplier || "Pas de fournisseur"}</div>
+          <div class="muted" style="margin-top:6px;">${[c.first_name, c.last_name].filter(Boolean).join(' ') || 'Pas de contact'}</div>
+          <div class="muted" style="margin-top:8px;">${c.supplier || 'Pas de fournisseur'}</div>
+          <div style="margin-top:8px;" class="muted">${c.siret ? 'SIRET : ' + c.siret : ''}</div>
           <div style="margin-top:10px; display:flex; gap:6px; flex-wrap:wrap;">
-            ${tags.map(tag => `<span class="badge">${tag}</span>`).join("")}
+            ${tags.map(tag => `<span class="badge">${tag}</span>`).join('')}
           </div>
         `;
-        div.addEventListener("click", async () => {
+        div.addEventListener('click', async () => {
           selectedClientId = c.id;
           renderClientList();
           await renderSelectedClient();
@@ -1225,79 +1255,80 @@
 
     function fillForm(c) {
       editingId = c.id;
-      $("company").value = c.company || "";
-      $("first_name").value = c.first_name || "";
-      $("last_name").value = c.last_name || "";
-      $("email").value = c.email || "";
-      $("phone").value = c.phone || "";
-      $("address").value = c.address || "";
-      $("status").value = c.status || "Nouveau prospect";
-      $("assigned_to").value = c.assigned_to || "";
-      $("supplier").value = c.supplier || "";
-      $("supplier_other").value = c.supplier_other || "";
-      $("meter_type").value = c.meter_type || "";
-      $("tariff_category").value = c.tariff_category || "";
-      $("contract_type").value = c.contract_type || "";
-      $("base_price").value = c.base_price || "";
-      $("price_hp").value = c.price_hp || "";
-      $("price_hc").value = c.price_hc || "";
-      $("price_hpe").value = c.price_hpe || "";
-      $("price_hph").value = c.price_hph || "";
-      $("price_hce").value = c.price_hce || "";
-      $("price_hch").value = c.price_hch || "";
-      $("pdl_number").value = c.pdl_number || "";
-      $("subscribed_power").value = c.subscribed_power || "";
-      $("contract_end_date").value = c.contract_end_date || "";
-      $("annual_budget").value = c.annual_budget || "";
-      $("notes").value = c.notes || "";
+      $("company").value = c.company || '';
+      $("first_name").value = c.first_name || '';
+      $("last_name").value = c.last_name || '';
+      $("email").value = c.email || '';
+      $("phone").value = c.phone || '';
+      $("siret").value = c.siret || '';
+      $("address").value = c.address || '';
+      $("status").value = c.status || 'Nouveau prospect';
+      $("assigned_to").value = c.assigned_to || '';
+      $("supplier").value = c.supplier || '';
+      $("supplier_other").value = c.supplier_other || '';
+      $("meter_type").value = c.meter_type || '';
+      $("tariff_category").value = c.tariff_category || '';
+      $("contract_type").value = c.contract_type || '';
+      $("base_price").value = c.base_price || '';
+      $("price_hp").value = c.price_hp || '';
+      $("price_hc").value = c.price_hc || '';
+      $("price_hpe").value = c.price_hpe || '';
+      $("price_hph").value = c.price_hph || '';
+      $("price_hce").value = c.price_hce || '';
+      $("price_hch").value = c.price_hch || '';
+      $("pdl_number").value = c.pdl_number || '';
+      $("subscribed_power").value = c.subscribed_power || '';
+      $("contract_end_date").value = c.contract_end_date || '';
+      $("annual_budget").value = c.annual_budget || '';
+      $("notes").value = c.notes || '';
       $("acd_signed").checked = !!c.acd_signed;
-      $("client_tags").value = getClientTags(c.id).join(', ');
+      $("client_tags").value = normalizeTags(c.client_tags).join(', ');
       refreshTagEditor();
       updateSupplierOther();
       updateContractFields();
-      setMsg("Client chargé dans le formulaire.");
-      openModal("edit");
+      setMsg('Client chargé dans le formulaire.');
+      openModal('edit');
     }
 
     async function renderSelectedClient() {
       const c = clients.find(x => x.id === selectedClientId);
 
       if (!c) {
-        $("selectedTitle").textContent = "Aucun client";
-        $("selectedSubtitle").textContent = "Crée ou sélectionne un client pour afficher le dossier.";
-        $("sum_status").textContent = "-";
-        $("sum_supplier").textContent = "-";
-        $("sum_contract").textContent = "-";
-        $("notesBox").textContent = "Aucune note.";
+        $("selectedTitle").textContent = 'Aucun client';
+        $("selectedSubtitle").textContent = 'Crée ou sélectionne un client pour afficher le dossier.';
+        $("sum_status").textContent = '-';
+        $("sum_supplier").textContent = '-';
+        $("sum_contract").textContent = '-';
+        $("notesBox").textContent = 'Aucune note.';
         renderClientTags(null);
         $("infoBoxA").innerHTML = `<strong>Contact</strong><br>-<br><br><strong>Email</strong><br>-<br><br><strong>Téléphone</strong><br>-`;
-        $("infoBoxB").innerHTML = `<strong>Adresse</strong><br>-<br><br><strong>PDL</strong><br>-<br><br><strong>Budget annuel</strong><br>-`;
-        $("docList").innerHTML = "";
-        setDocMsg("Sélectionne un client pour gérer ses documents.");
-        $("previewWrap").classList.add("hidden");
-        $("previewFrame").src = "about:blank";
+        $("infoBoxB").innerHTML = `<strong>Adresse</strong><br>-<br><br><strong>PDL</strong><br>-<br><br><strong>Budget annuel</strong><br>-<br><br><strong>SIRET</strong><br>-`;
+        $("docList").innerHTML = '';
+        setDocMsg('Sélectionne un client pour gérer ses documents.');
+        $("previewWrap").classList.add('hidden');
+        $("previewFrame").src = 'about:blank';
         $("rappelsClientList").innerHTML = '<div class="muted">Aucun rappel.</div>';
         $("rappelsCountBadge").textContent = '0';
-        setRappelMsg("Sélectionne un client pour ajouter un rappel.");
+        setRappelMsg('Sélectionne un client pour ajouter un rappel.');
         return;
       }
 
-      $("selectedTitle").textContent = c.company || "Client";
-      $("selectedSubtitle").textContent = [c.first_name, c.last_name, c.email].filter(Boolean).join(" • ");
+      $("selectedTitle").textContent = c.company || 'Client';
+      $("selectedSubtitle").textContent = [c.first_name, c.last_name, c.email].filter(Boolean).join(' • ');
 
-      const supplier = c.supplier === "Autres" ? (c.supplier_other || "Autres") : (c.supplier || "-");
-      let contractLabel = c.contract_type || "-";
-      if (c.contract_type === "Fixe") contractLabel += c.base_price ? " • " + c.base_price : "";
-      if (c.contract_type === "HP / HC") contractLabel += ` • HP ${c.price_hp || "-"} / HC ${c.price_hc || "-"}`;
-      if (c.contract_type === "4 plages") contractLabel += ` • HPE ${c.price_hpe || "-"} / HPH ${c.price_hph || "-"} / HCE ${c.price_hce || "-"} / HCH ${c.price_hch || "-"}`;
+      const supplier = c.supplier === 'Autres' ? (c.supplier_other || 'Autres') : (c.supplier || '-');
+      let contractLabel = c.contract_type || '-';
+      if (c.contract_type === 'Fixe') contractLabel += c.base_price ? ' • ' + c.base_price : '';
+      if (c.contract_type === 'HP / HC') contractLabel += ` • HP ${c.price_hp || '-'} / HC ${c.price_hc || '-'}`;
+      if (c.contract_type === '4 plages') contractLabel += ` • HPE ${c.price_hpe || '-'} / HPH ${c.price_hph || '-'} / HCE ${c.price_hce || '-'} / HCH ${c.price_hch || '-'}`;
 
-      $("sum_status").textContent = c.status || "-";
+      $("sum_status").textContent = c.status || '-';
       $("sum_supplier").textContent = supplier;
       $("sum_contract").textContent = contractLabel;
-      $("notesBox").textContent = c.notes || "Aucune note.";
+      $("notesBox").textContent = c.notes || 'Aucune note.';
       renderClientTags(c);
-      $("infoBoxA").innerHTML = `<strong>Contact</strong><br>${[c.first_name, c.last_name].filter(Boolean).join(" ") || "-"}<br><br><strong>Email</strong><br>${c.email || "-"}<br><br><strong>Téléphone</strong><br>${c.phone || "-"}`;
-      $("infoBoxB").innerHTML = `<strong>Adresse</strong><br>${c.address || "-"}<br><br><strong>PDL</strong><br>${c.pdl_number || "-"}<br><br><strong>Budget annuel</strong><br>${c.annual_budget || "-"}`;
+      $("infoBoxA").innerHTML = `<strong>Contact</strong><br>${[c.first_name, c.last_name].filter(Boolean).join(' ') || '-'}<br><br><strong>Email</strong><br>${c.email || '-'}<br><br><strong>Téléphone</strong><br>${c.phone || '-'}`;
+      $("infoBoxB").innerHTML = `<strong>Adresse</strong><br>${c.address || '-'}<br><br><strong>PDL</strong><br>${c.pdl_number || '-'}<br><br><strong>Budget annuel</strong><br>${c.annual_budget || '-'}<br><br><strong>SIRET</strong><br>${c.siret || '-'}`;
       await loadDocuments(c.id);
       await loadClientRappels(c.id);
       setRappelMsg(`Rappels prêts pour ${c.company}.`);
@@ -1316,6 +1347,7 @@
         last_name: $("last_name").value.trim(),
         email: $("email").value.trim(),
         phone: $("phone").value.trim(),
+        siret: $("siret").value.trim(),
         address: $("address").value.trim(),
         status: $("status").value,
         assigned_to: $("assigned_to").value,
@@ -1336,131 +1368,129 @@
         price_hch: $("price_hch").value.trim(),
         pdl_number: $("pdl_number").value.trim(),
         subscribed_power: $("subscribed_power").value.trim(),
-        contract_end_date: $("contract_end_date").value || null
+        contract_end_date: $("contract_end_date").value || null,
+        client_tags: parseTags($("client_tags").value)
       };
 
-      setMsg("Enregistrement...");
+      setMsg('Enregistrement...');
       if (editingId) {
-        const { error } = await clientDb.from("clients").update(payload).eq("id", editingId);
+        const { error } = await clientDb.from('clients').update(payload).eq('id', editingId);
         if (error) {
-          setMsg("Erreur modification client: " + error.message);
+          setMsg('Erreur modification client: ' + error.message);
           return;
         }
-        saveClientTags(editingId, parseTags($("client_tags").value));
         selectedClientId = editingId;
         await loadClients(editingId);
         closeModal();
-        setMsg("Client modifié avec succès.");
+        setMsg('Client modifié avec succès.');
       } else {
-        const { data, error } = await clientDb.from("clients").insert([payload]).select().single();
+        const { data, error } = await clientDb.from('clients').insert([payload]).select().single();
         if (error) {
-          setMsg("Erreur création client: " + error.message);
+          setMsg('Erreur création client: ' + error.message);
           return;
         }
-        saveClientTags(data.id, parseTags($("client_tags").value));
         selectedClientId = data.id;
         await loadClients(data.id);
         closeModal();
-        setMsg("Client créé avec succès.");
+        setMsg('Client créé avec succès.');
       }
     }
 
     async function deleteClient() {
       if (!selectedClientId) return;
-      const ok = confirm("Supprimer ce client et tous ses documents ?");
+      const ok = confirm('Supprimer ce client et tous ses documents ?');
       if (!ok) return;
 
-      setSidebarMsg("Suppression du client et des documents...");
+      setSidebarMsg('Suppression du client et des documents...');
 
       const { error: deleteRappelsError } = await clientDb
-        .from("rappels")
+        .from('rappels')
         .delete()
-        .eq("client_id", selectedClientId);
+        .eq('client_id', selectedClientId);
       if (deleteRappelsError) {
-        setSidebarMsg("Erreur suppression rappels: " + deleteRappelsError.message);
+        setSidebarMsg('Erreur suppression rappels: ' + deleteRappelsError.message);
         return;
       }
 
       const { data: docs, error: listError } = await clientDb.storage
-        .from("Documents")
+        .from('Documents')
         .list(selectedClientId);
 
       if (listError) {
-        setSidebarMsg("Erreur lecture documents storage: " + listError.message);
+        setSidebarMsg('Erreur lecture documents storage: ' + listError.message);
         return;
       }
 
       if (docs && docs.length > 0) {
         const paths = docs.map(doc => `${selectedClientId}/${doc.name}`);
         const { error: removeError } = await clientDb.storage
-          .from("Documents")
+          .from('Documents')
           .remove(paths);
 
         if (removeError) {
-          setSidebarMsg("Erreur suppression fichiers: " + removeError.message);
+          setSidebarMsg('Erreur suppression fichiers: ' + removeError.message);
           return;
         }
       }
 
       const { error: deleteDocsError } = await clientDb
-        .from("documents")
+        .from('documents')
         .delete()
-        .eq("client_id", selectedClientId);
+        .eq('client_id', selectedClientId);
 
       if (deleteDocsError) {
-        setSidebarMsg("Erreur suppression table documents: " + deleteDocsError.message);
+        setSidebarMsg('Erreur suppression table documents: ' + deleteDocsError.message);
         return;
       }
 
       const { error: deleteClientError } = await clientDb
-        .from("clients")
+        .from('clients')
         .delete()
-        .eq("id", selectedClientId);
+        .eq('id', selectedClientId);
 
       if (deleteClientError) {
-        setSidebarMsg("Erreur suppression client: " + deleteClientError.message);
+        setSidebarMsg('Erreur suppression client: ' + deleteClientError.message);
         return;
       }
 
-      removeClientTags(selectedClientId);
       selectedClientId = null;
       editingId = null;
       resetForm();
       resetRappelForm();
       await loadClients();
-      $("docList").innerHTML = "";
-      setDocMsg("Sélectionne un client pour gérer ses documents.");
-      $("previewWrap").classList.add("hidden");
-      $("previewFrame").src = "about:blank";
-      setSidebarMsg("Client, documents et rappels supprimés.");
+      $("docList").innerHTML = '';
+      setDocMsg('Sélectionne un client pour gérer ses documents.');
+      $("previewWrap").classList.add('hidden');
+      $("previewFrame").src = 'about:blank';
+      setSidebarMsg('Client, documents et rappels supprimés.');
     }
 
     async function loadDocuments(clientId) {
-      setDocMsg("Chargement des documents...");
-      const { data, error } = await clientDb.storage.from("Documents").list(clientId);
+      setDocMsg('Chargement des documents...');
+      const { data, error } = await clientDb.storage.from('Documents').list(clientId);
 
       if (error) {
-        setDocMsg("Erreur documents: " + error.message);
+        setDocMsg('Erreur documents: ' + error.message);
         return;
       }
 
       const list = $("docList");
-      list.innerHTML = "";
-      $("previewWrap").classList.add("hidden");
-      $("previewFrame").src = "about:blank";
+      list.innerHTML = '';
+      $("previewWrap").classList.add('hidden');
+      $("previewFrame").src = 'about:blank';
 
       if (!data || data.length === 0) {
-        setDocMsg("Aucun document sur ce client.");
+        setDocMsg('Aucun document sur ce client.');
         return;
       }
 
-      setDocMsg("Documents chargés.");
+      setDocMsg('Documents chargés.');
 
       data.forEach(file => {
         const sizeBytes = file.metadata && file.metadata.size ? file.metadata.size : 0;
-        const sizeMo = sizeBytes ? (sizeBytes / 1024 / 1024).toFixed(2) + " Mo" : "-";
-        const div = document.createElement("div");
-        div.className = "doc-item";
+        const sizeMo = sizeBytes ? (sizeBytes / 1024 / 1024).toFixed(2) + ' Mo' : '-';
+        const div = document.createElement('div');
+        div.className = 'doc-item';
         div.innerHTML = `
           <div>
             <div class="doc-name">${file.name}</div>
@@ -1474,40 +1504,40 @@
         list.appendChild(div);
       });
 
-      list.querySelectorAll("[data-open]").forEach(btn => {
-        btn.addEventListener("click", async () => {
+      list.querySelectorAll('[data-open]').forEach(btn => {
+        btn.addEventListener('click', async () => {
           const name = btn.dataset.open;
           const { data, error } = await clientDb.storage
-            .from("Documents")
+            .from('Documents')
             .createSignedUrl(`${clientId}/${name}`, 3600);
 
           if (error) {
-            setDocMsg("Erreur ouverture: " + error.message);
+            setDocMsg('Erreur ouverture: ' + error.message);
             return;
           }
 
           $("previewFrame").src = data.signedUrl;
-          $("previewWrap").classList.remove("hidden");
-          setDocMsg("Aperçu chargé.");
+          $("previewWrap").classList.remove('hidden');
+          setDocMsg('Aperçu chargé.');
         });
       });
 
-      list.querySelectorAll("[data-delete]").forEach(btn => {
-        btn.addEventListener("click", async () => {
+      list.querySelectorAll('[data-delete]').forEach(btn => {
+        btn.addEventListener('click', async () => {
           const name = btn.dataset.delete;
-          const ok = confirm("Supprimer ce document ?");
+          const ok = confirm('Supprimer ce document ?');
           if (!ok) return;
 
           const { error } = await clientDb.storage
-            .from("Documents")
+            .from('Documents')
             .remove([`${clientId}/${name}`]);
 
           if (error) {
-            setDocMsg("Erreur suppression: " + error.message);
+            setDocMsg('Erreur suppression: ' + error.message);
             return;
           }
 
-          setDocMsg("Document supprimé.");
+          setDocMsg('Document supprimé.');
           loadDocuments(clientId);
         });
       });
@@ -1521,23 +1551,23 @@
 
       const files = $("docInput").files;
       if (!files || !files.length) {
-        setDocMsg("Choisis au moins un fichier.");
+        setDocMsg('Choisis au moins un fichier.');
         return;
       }
 
-      setDocMsg("Upload en cours...");
+      setDocMsg('Upload en cours...');
 
       for (const file of files) {
         const path = `${selectedClientId}/${Date.now()}-${file.name}`;
-        const { error } = await clientDb.storage.from("Documents").upload(path, file, { upsert: true });
+        const { error } = await clientDb.storage.from('Documents').upload(path, file, { upsert: true });
         if (error) {
-          setDocMsg("Erreur upload: " + error.message);
+          setDocMsg('Erreur upload: ' + error.message);
           return;
         }
       }
 
-      $("docInput").value = "";
-      setDocMsg("Document(s) importé(s) avec succès.");
+      $("docInput").value = '';
+      setDocMsg('Document(s) importé(s) avec succès.');
       loadDocuments(selectedClientId);
     }
 
@@ -1554,13 +1584,13 @@
       const notes = $("rappel_notes").value.trim();
 
       if (!title || !date_rappel) {
-        setRappelMsg("Le titre et la date sont obligatoires.");
+        setRappelMsg('Le titre et la date sont obligatoires.');
         return;
       }
 
-      setRappelMsg("Ajout du rappel...");
+      setRappelMsg('Ajout du rappel...');
       const { error } = await clientDb
-        .from("rappels")
+        .from('rappels')
         .insert([{
           client_id: selectedClientId,
           title,
@@ -1572,12 +1602,12 @@
         }]);
 
       if (error) {
-        setRappelMsg("Erreur ajout rappel: " + error.message);
+        setRappelMsg('Erreur ajout rappel: ' + error.message);
         return;
       }
 
       resetRappelForm();
-      setRappelMsg("Rappel ajouté avec succès.");
+      setRappelMsg('Rappel ajouté avec succès.');
       await loadClientRappels(selectedClientId);
       await loadGlobalRappels();
     }
@@ -1587,10 +1617,10 @@
       list.innerHTML = '<div class="muted">Chargement...</div>';
 
       const { data, error } = await clientDb
-        .from("rappels")
-        .select("*")
-        .eq("client_id", clientId)
-        .order("date_rappel", { ascending: true });
+        .from('rappels')
+        .select('*')
+        .eq('client_id', clientId)
+        .order('date_rappel', { ascending: true });
 
       if (error) {
         list.innerHTML = `<div class="muted">Erreur rappels: ${error.message}</div>`;
@@ -1598,7 +1628,7 @@
       }
 
       $("rappelsCountBadge").textContent = String((data || []).length);
-      list.innerHTML = "";
+      list.innerHTML = '';
 
       if (!data || !data.length) {
         list.innerHTML = '<div class="muted">Aucun rappel pour ce client.</div>';
@@ -1695,27 +1725,31 @@
       btn.addEventListener('click', () => setActiveTab(btn.dataset.tab));
     });
 
-    $("openCreateBtn").addEventListener("click", () => {
-      resetForm();
-      openModal("create");
+    document.querySelectorAll('.filter-chip').forEach(btn => {
+      btn.addEventListener('click', () => setFilter(btn.dataset.filter));
     });
-    $("closeModalBtn").addEventListener("click", closeModal);
-    $("clientModalBackdrop").addEventListener("click", (e) => {
+
+    $("openCreateBtn").addEventListener('click', () => {
+      resetForm();
+      openModal('create');
+    });
+    $("closeModalBtn").addEventListener('click', closeModal);
+    $("clientModalBackdrop").addEventListener('click', (e) => {
       if (e.target.id === 'clientModalBackdrop') closeModal();
     });
-    $("saveBtn").addEventListener("click", saveClient);
-    $("resetBtn").addEventListener("click", resetForm);
-    $("supplier").addEventListener("change", updateSupplierOther);
-    $("contract_type").addEventListener("change", updateContractFields);
-    $("search").addEventListener("input", renderClientList);
-    $("uploadDocBtn").addEventListener("click", uploadDocuments);
-    $("saveRappelBtn").addEventListener("click", saveRappel);
-    $("editSelectedBtn").addEventListener("click", () => {
+    $("saveBtn").addEventListener('click', saveClient);
+    $("resetBtn").addEventListener('click', resetForm);
+    $("supplier").addEventListener('change', updateSupplierOther);
+    $("contract_type").addEventListener('change', updateContractFields);
+    $("search").addEventListener('input', renderClientList);
+    $("uploadDocBtn").addEventListener('click', uploadDocuments);
+    $("saveRappelBtn").addEventListener('click', saveRappel);
+    $("editSelectedBtn").addEventListener('click', () => {
       const c = clients.find(x => x.id === selectedClientId);
       if (!c) return;
       fillForm(c);
     });
-    $("deleteSelectedBtn").addEventListener("click", deleteClient);
+    $("deleteSelectedBtn").addEventListener('click', deleteClient);
 
     resetForm();
     resetRappelForm();
