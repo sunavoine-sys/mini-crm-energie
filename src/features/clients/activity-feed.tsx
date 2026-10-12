@@ -5,6 +5,7 @@ import { toast } from 'sonner'
 import type { Activity } from '@/lib/types'
 import { formatRelativeTime } from '@/lib/format'
 import { spring } from '@/lib/motion'
+import { MOD } from '@/lib/platform'
 import { Button } from '@/components/ui/button'
 import { EmptyState } from '@/components/ui/empty-state'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -46,7 +47,7 @@ export function ActivityFeed({ clientId }: { clientId: string }) {
           value={body}
           onChange={(e) => setBody(e.target.value)}
           onKeyDown={(e) => (e.metaKey || e.ctrlKey) && e.key === 'Enter' && submit()}
-          placeholder="Ajouter une note au journal… (⌘↵)"
+          placeholder={`Ajouter une note au journal… (${MOD}+↵)`}
           className="min-h-14 resize-none border-0 bg-transparent p-1 shadow-none focus-visible:ring-0 dark:bg-transparent"
         />
         <div className="flex justify-end">

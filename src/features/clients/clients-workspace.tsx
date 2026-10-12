@@ -1,36 +1,37 @@
-import { useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import { useNavigate, useParams } from 'react-router'
 import { AnimatePresence, motion } from 'motion/react'
-import { MousePointerClick, Plus, Search, Zap } from 'lucide-react'
-import type { Client, Task } from '@/lib/types'
+import { MousePointerClick, Plus } from 'lucide-react'
+import type { Task } from '@/lib/types'
 import { spring } from '@/lib/motion'
 import { cn } from '@/lib/utils'
+import { MOD } from '@/lib/platform'
 import { useHotkeys } from '@/hooks/use-hotkeys'
-import { useUrlParam } from '@/hooks/use-url-state'
 import { Button } from '@/components/ui/button'
 import { EmptyState } from '@/components/ui/empty-state'
 import { Kbd } from '@/components/ui/kbd'
 import { Skeleton } from '@/components/ui/skeleton'
-import { ThemeToggle } from '@/components/app/theme-toggle'
-import { UserMenu } from '@/components/app/user-menu'
+import { useAppActions } from '@/app/app-context'
 import { Agenda } from '@/features/tasks/agenda'
 import { useOpenTasks } from '@/features/tasks/api'
 import { useClients, useSitesIndex } from './api'
 import { ClientDetail } from './client-detail'
-import { ClientFormDialog } from './client-form-dialog'
 import { ClientList, type StageFilter } from './client-list'
 
 export function ClientsWorkspace() {
   const clients = useClients()
   const sitesIndex = useSitesIndex()
   const openTasks = useOpenTasks()
-  const [selectedId, setSelectedId] = useUrlParam('client')
+  const { clientId } = useParams()
+  const navigate = useNavigate()
+  const actions = useAppActions()
   const [query, setQuery] = useState('')
   const [filter, setFilter] = useState<StageFilter>('active')
-  const [formOpen, setFormOpen] = useState(false)
-  const [editing, setEditing] = useState<Client | null>(null)
   const searchRef = useRef<HTMLInputElement>(null)
 
+  const selectedId = clientId ?? null
   const selected = useMemo(() => clients.data?.find((c) => c.id === selectedId) ?? null, [clients.data, selectedId])
+  const select = (id: string | null, replace = false) => navigate(id ? `/clients/${id}` : '/clients', { replace })
 
   const tasksByClient = useMemo(() => {
     const map = new Map<string, Task>()
@@ -38,118 +39,79 @@ export function ClientsWorkspace() {
     return map
   }, [openTasks.data])
 
-  const openCreate = () => {
-    setEditing(null)
-    setFormOpen(true)
-  }
-  const openEdit = () => {
-    setEditing(selected)
-    setFormOpen(true)
-  }
+  // « / » focalise la recherche du portefeuille tant que cette page est affichée
+  useEffect(() => {
+    actions.registerSearch(() => searchRef.current?.focus())
+    return () => actions.registerSearch(null)
+  }, [actions])
 
   useHotkeys({
-    '/': () => searchRef.current?.focus(),
-    n: openCreate,
-    e: () => selected && openEdit(),
-    escape: () => selectedId && setSelectedId(null),
+    escape: () => selectedId && select(null),
   })
 
   return (
-    <div className="flex h-dvh flex-col overflow-hidden bg-background">
-      {/* Barre supérieure */}
-      <header className="relative z-20 flex h-12 shrink-0 items-center gap-3 border-b border-border bg-background/80 px-3 backdrop-blur-md sm:px-4">
-        <div className="flex items-center gap-2.5">
-          <div className="flex size-7 items-center justify-center rounded-lg bg-foreground text-background shadow-sm">
-            <Zap className="size-3.5 fill-current" />
-          </div>
-          <span className="text-sm font-semibold tracking-tight">DMS CRM</span>
-          <span className="hidden text-sm text-muted-foreground/60 sm:inline">/</span>
-          <span className="hidden text-sm text-muted-foreground sm:inline">Clients</span>
-        </div>
+    <div className="grid h-full min-h-0 grid-cols-1 lg:grid-cols-[320px_minmax(0,1fr)] xl:grid-cols-[320px_minmax(0,1fr)_300px]">
+      <aside className={cn('min-h-0 border-r border-border', selected ? 'hidden lg:block' : 'block')}>
+        <ClientList
+          ref={searchRef}
+          clients={clients.data}
+          isLoading={clients.isPending}
+          error={clients.error}
+          sitesIndex={sitesIndex.data}
+          tasksByClient={tasksByClient}
+          query={query}
+          onQueryChange={setQuery}
+          filter={filter}
+          onFilterChange={setFilter}
+          selectedId={selectedId}
+          onSelect={(id) => select(id)}
+          onCreate={() => actions.openClientForm(null)}
+        />
+      </aside>
 
-        <button
-          onClick={() => searchRef.current?.focus()}
-          className="mx-auto hidden h-8 w-full max-w-sm items-center gap-2 rounded-md border border-border bg-muted/50 px-2.5 text-[13px] text-muted-foreground transition-colors hover:bg-muted md:flex"
-        >
-          <Search className="size-3.5" />
-          <span className="flex-1 text-left">Rechercher un client…</span>
-          <Kbd>/</Kbd>
-        </button>
-
-        <div className="ml-auto flex items-center gap-1.5 md:ml-0">
-          <Button size="sm" onClick={openCreate} className="hidden sm:inline-flex">
-            <Plus /> Nouveau client
-            <Kbd className="ml-0.5 border-white/20 bg-white/15 text-primary-foreground/80">N</Kbd>
-          </Button>
-          <Button size="icon-sm" onClick={openCreate} className="sm:hidden" aria-label="Nouveau client">
-            <Plus />
-          </Button>
-          <ThemeToggle />
-          <UserMenu />
-        </div>
-      </header>
-
-      {/* Espace de travail : liste · fiche · agenda */}
-      <div className="grid min-h-0 flex-1 grid-cols-1 lg:grid-cols-[320px_minmax(0,1fr)] xl:grid-cols-[320px_minmax(0,1fr)_300px]">
-        <aside className={cn('min-h-0 border-r border-border bg-subtle', selected ? 'hidden lg:block' : 'block')}>
-          <ClientList
-            ref={searchRef}
-            clients={clients.data}
-            isLoading={clients.isPending}
-            error={clients.error}
-            sitesIndex={sitesIndex.data}
-            tasksByClient={tasksByClient}
-            query={query}
-            onQueryChange={setQuery}
-            filter={filter}
-            onFilterChange={setFilter}
-            selectedId={selectedId}
-            onSelect={(id) => setSelectedId(id)}
-            onCreate={openCreate}
-          />
-        </aside>
-
-        <main className={cn('min-h-0 overflow-y-auto', !selected && 'hidden lg:block')}>
-          <AnimatePresence mode="wait">
-            {clients.isPending && selectedId ? (
-              <DetailSkeleton key="skeleton" />
-            ) : selected ? (
-              <ClientDetail
-                key={selected.id}
-                client={selected}
-                sites={sitesIndex.data?.get(selected.id)}
-                onEdit={openEdit}
-                onDeleted={() => setSelectedId(null, { replace: true })}
-                onBack={() => setSelectedId(null)}
+      <section className={cn('min-h-0 overflow-y-auto bg-background', !selected && !(clients.isPending && selectedId) && 'hidden lg:block')}>
+        <AnimatePresence mode="wait">
+          {clients.isPending && selectedId ? (
+            <DetailSkeleton key="skeleton" />
+          ) : selected ? (
+            <ClientDetail
+              key={selected.id}
+              client={selected}
+              sites={sitesIndex.data?.get(selected.id)}
+              onEdit={() => actions.openClientForm(selected)}
+              onDeleted={() => select(null, true)}
+              onBack={() => select(null)}
+            />
+          ) : (
+            <motion.div key="empty" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={spring.smooth} className="flex h-full items-center justify-center p-6">
+              <EmptyState
+                icon={MousePointerClick}
+                title={selectedId && !clients.isPending ? 'Dossier introuvable' : 'Sélectionne un dossier'}
+                description={
+                  selectedId && !clients.isPending
+                    ? "Ce client n'existe plus ou n'est pas dans ton portefeuille."
+                    : 'Choisis un client dans le portefeuille pour afficher ses sites, documents et prochaines actions.'
+                }
+                action={
+                  <div className="flex flex-col items-center gap-3">
+                    <Button size="sm" variant="outline" onClick={() => actions.openClientForm(null)}>
+                      <Plus /> Nouveau client
+                    </Button>
+                    <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                      <Kbd>{MOD}</Kbd>
+                      <Kbd>K</Kbd> palette <span aria-hidden>·</span> <Kbd>/</Kbd> rechercher <span aria-hidden>·</span> <Kbd>?</Kbd> raccourcis
+                    </p>
+                  </div>
+                }
               />
-            ) : (
-              <motion.div key="empty" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={spring.smooth} className="flex h-full items-center justify-center p-6">
-                <EmptyState
-                  icon={MousePointerClick}
-                  title="Sélectionne un dossier"
-                  description="Choisis un client dans le portefeuille pour afficher ses sites, documents et prochaines actions."
-                  action={
-                    <div className="flex flex-col items-center gap-3">
-                      <Button size="sm" variant="outline" onClick={openCreate}>
-                        <Plus /> Nouveau client
-                      </Button>
-                      <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                        <Kbd>/</Kbd> rechercher <span aria-hidden>·</span> <Kbd>N</Kbd> nouveau <span aria-hidden>·</span> <Kbd>E</Kbd> modifier
-                      </p>
-                    </div>
-                  }
-                />
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </main>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </section>
 
-        <aside className="hidden min-h-0 border-l border-border bg-subtle xl:block">
-          <Agenda tasks={openTasks.data} isLoading={openTasks.isPending} selectedClientId={selectedId} onSelectClient={(id) => setSelectedId(id)} />
-        </aside>
-      </div>
-
-      <ClientFormDialog open={formOpen} onOpenChange={setFormOpen} client={editing} onSaved={(c) => !editing && setSelectedId(c.id)} />
+      <aside className="hidden min-h-0 border-l border-border xl:block">
+        <Agenda tasks={openTasks.data} isLoading={openTasks.isPending} selectedClientId={selectedId} onSelectClient={(id) => select(id)} />
+      </aside>
     </div>
   )
 }

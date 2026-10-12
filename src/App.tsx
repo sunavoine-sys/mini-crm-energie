@@ -2,7 +2,8 @@ import { AnimatePresence, motion } from 'motion/react'
 import { Zap } from 'lucide-react'
 import { useAuth } from '@/features/auth/auth-context'
 import { LoginScreen } from '@/features/auth/login-screen'
-import { ClientsWorkspace } from '@/features/clients/clients-workspace'
+import { RouterProvider } from 'react-router'
+import { router } from '@/app/router'
 
 export default function App() {
   const { session, loading } = useAuth()
@@ -17,7 +18,7 @@ export default function App() {
         </motion.div>
       ) : session ? (
         <motion.div key="app" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.25 }}>
-          <ClientsWorkspace />
+          <RouterProvider router={router} />
         </motion.div>
       ) : (
         <motion.div key="login" exit={{ opacity: 0 }}>

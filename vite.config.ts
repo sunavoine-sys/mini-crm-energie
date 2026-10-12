@@ -16,6 +16,8 @@ export default defineConfig({
           if (id.includes('@supabase')) return 'supabase'
           if (id.includes('motion') || id.includes('framer')) return 'motion'
           if (id.includes('radix-ui') || id.includes('@radix-ui')) return 'radix'
+          if (/node_modules\/(react|react-dom|scheduler|react-router)\//.test(id)) return 'react'
+          if (id.includes('@tanstack')) return 'query'
         },
       },
     },

@@ -4,6 +4,7 @@ import type { Client, ClientInput, StageId } from '@/lib/types'
 import { STAGES } from '@/lib/stages'
 import { parseDecimal } from '@/lib/format'
 import { cn } from '@/lib/utils'
+import { MOD } from '@/lib/platform'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Dialog, DialogBody, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
@@ -220,7 +221,7 @@ export function ClientFormDialog({ open, onOpenChange, client, onSaved }: Client
 
           <DialogFooter>
             <span className="mr-auto hidden items-center gap-1 text-xs text-muted-foreground sm:flex">
-              <Kbd>⌘</Kbd>
+              <Kbd>{MOD}</Kbd>
               <Kbd>↵</Kbd> pour enregistrer
             </span>
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>

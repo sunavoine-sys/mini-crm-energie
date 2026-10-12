@@ -83,3 +83,21 @@ export function useDeleteTask() {
     onSuccess: () => qc.invalidateQueries({ queryKey: ['tasks'] }),
   })
 }
+
+export function useRescheduleTask() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: async ({ id, due_date }: { id: string; due_date: string }) => {
+      const { error } = await supabase.from('crm_tasks').update({ due_date }).eq('id', id)
+      if (error) throw error
+    },
+    onMutate: async ({ id, due_date }) => {
+      await qc.cancelQueries({ queryKey: ['tasks', 'open'] })
+      const previous = qc.getQueryData<Task[]>(['tasks', 'open'])
+      qc.setQueryData<Task[]>(['tasks', 'open'], (old) => old?.map((t) => (t.id === id ? { ...t, due_date } : t)))
+      return { previous }
+    },
+    onError: (_e, _v, ctx) => ctx?.previous && qc.setQueryData(['tasks', 'open'], ctx.previous),
+    onSettled: () => qc.invalidateQueries({ queryKey: ['tasks'] }),
+  })
+}
