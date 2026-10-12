@@ -11,6 +11,7 @@ import { Button } from '@/components/ui/button'
 import { Sheet, SheetContent, SheetTitle } from '@/components/ui/sheet'
 import { useClients } from '@/features/clients/api'
 import { ClientFormDialog } from '@/features/clients/client-form-dialog'
+import { ClientSheet } from '@/features/clients/client-sheet'
 import { useOpenTasks } from '@/features/tasks/api'
 import { AppActionsContext, type AppActions } from './app-context'
 import { CommandMenu, type CommandPage } from './command-menu'
@@ -25,7 +26,8 @@ export function AppShell() {
   const clients = useClients()
   const openTasks = useOpenTasks()
   const clientMatch = useMatch('/clients/:clientId')
-  const activeId = clientMatch?.params.clientId ?? null
+  const [sheetId, setSheetId] = useState<string | null>(null)
+  const activeId = sheetId ?? clientMatch?.params.clientId ?? null
   const activeClient = useMemo(() => clients.data?.find((c) => c.id === activeId) ?? null, [clients.data, activeId])
 
   const [collapsed, setCollapsed] = useState(() => {
@@ -69,6 +71,7 @@ export function AppShell() {
         setCommandOpen(true)
       },
       openShortcuts: () => setShortcutsOpen(true),
+      openClientSheet: (id) => setSheetId(id),
       registerSearch: (focus) => {
         searchRef.current = focus
       },
@@ -156,6 +159,7 @@ export function AppShell() {
         onShortcuts={() => setShortcutsOpen(true)}
       />
       <ShortcutsDialog open={shortcutsOpen} onOpenChange={setShortcutsOpen} />
+      <ClientSheet clientId={sheetId} onClose={() => setSheetId(null)} />
       <ClientFormDialog open={formOpen} onOpenChange={setFormOpen} client={editing} onSaved={(c) => !editing && navigate(`/clients/${c.id}`)} />
     </AppActionsContext.Provider>
   )

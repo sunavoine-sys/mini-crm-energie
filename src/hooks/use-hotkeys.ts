@@ -8,7 +8,7 @@ export function isTypingTarget(target: EventTarget | null) {
   return (
     el.isContentEditable ||
     ['INPUT', 'TEXTAREA', 'SELECT'].includes(el.tagName) ||
-    !!el.closest('[role="dialog"],[role="alertdialog"],[role="menu"],[data-radix-select-viewport]')
+    !!el.closest('[role="dialog"]:not([data-hotkeys]),[role="alertdialog"],[role="menu"],[data-radix-select-viewport]')
   )
 }
 

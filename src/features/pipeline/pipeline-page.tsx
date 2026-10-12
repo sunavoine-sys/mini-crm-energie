@@ -1,5 +1,4 @@
 import { useMemo, useState } from 'react'
-import { useNavigate } from 'react-router'
 import {
   AutoScrollActivator,
   DndContext,
@@ -21,7 +20,6 @@ import {
 } from '@dnd-kit/core'
 import { AnimatePresence, motion } from 'motion/react'
 import { Archive, ChevronDown, Search, X } from 'lucide-react'
-import { toast } from 'sonner'
 import type { Client, StageId, Task } from '@/lib/types'
 import { STAGE_BY_ID, STAGES, stageOf } from '@/lib/stages'
 import { daysFromToday, formatEur, normalize } from '@/lib/format'
@@ -32,21 +30,17 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Skeleton } from '@/components/ui/skeleton'
 import { ConfettiBurst } from '@/components/app/confetti'
 import { useAuth } from '@/features/auth/auth-context'
-import { useClients, useProfiles, useSitesIndex, useStageDelays, useUpdateStage, type SiteSummary } from '@/features/clients/api'
+import { useClients, useProfiles, useSitesIndex, useStageDelays, type SiteSummary } from '@/features/clients/api'
 import { useOpenTasks } from '@/features/tasks/api'
+import { useAppActions } from '@/app/app-context'
+import { ClientContextMenu } from '@/features/clients/client-context-menu'
+import { useStageChange } from '@/features/clients/use-stage-change'
 import { LostDialog } from './lost-dialog'
 import { PipelineCard } from './pipeline-card'
 
 const BOARD: StageId[] = ['prospect', 'factures', 'acd', 'offre', 'signe']
 const PAGE = 40
 const SIGNED_WINDOW_DAYS = 60
-
-const CELEBRATION: Partial<Record<StageId, string>> = {
-  factures: 'Factures reçues 📄',
-  acd: 'ACD signé ✍️',
-  offre: 'Offre placée 🚀',
-  signe: 'Contrat signé ! 🎉',
-}
 
 // Le pointeur prime (sensation « aimant ») ; repli sur l'intersection au clavier
 const collision: CollisionDetection = (args) => {
@@ -61,14 +55,14 @@ const dropAnimation: DropAnimation = {
 }
 
 export function PipelinePage() {
-  const navigate = useNavigate()
+  const actions = useAppActions()
   const { isAdmin } = useAuth()
   const clients = useClients()
   const sitesIndex = useSitesIndex()
   const tasks = useOpenTasks()
   const delays = useStageDelays()
   const profiles = useProfiles(isAdmin)
-  const update = useUpdateStage()
+  const changeStage = useStageChange()
 
   const [query, setQuery] = useState('')
   const [owner, setOwner] = useState('all')
@@ -121,19 +115,7 @@ export function PipelinePage() {
   }
 
   function move(client: Client, stage: StageId, lost_reason?: string | null, at?: { x: number; y: number }) {
-    update.mutate(
-      { id: client.id, stage, lost_reason },
-      {
-        onSuccess: () => {
-          if (stage === 'signe' && at) setConfetti({ ...at, key: Date.now() })
-          toast.success(CELEBRATION[stage] ?? `Étape : ${stageOf(stage).label}`, {
-            description: client.company ?? undefined,
-            action: { label: 'Annuler', onClick: () => update.mutate({ id: client.id, stage: client.stage }) },
-          })
-        },
-        onError: (e) => toast.error("Impossible de déplacer le dossier", { description: e.message }),
-      },
-    )
+    changeStage(client, stage, { lost_reason, onSigned: () => at && setConfetti({ ...at, key: Date.now() }) })
   }
 
   function onDragStart(e: DragStartEvent) {
@@ -246,7 +228,7 @@ export function PipelinePage() {
                     task={taskByClient.get(c.id)}
                     ownerName={isAdmin ? ownerName.get(c.owner_id ?? '') : undefined}
                     stalling={stallingDays(c)}
-                    onOpen={() => navigate(`/clients/${c.id}`)}
+                    onOpen={() => actions.openClientSheet(c.id)}
                   />
                 )}
               />
@@ -262,7 +244,7 @@ export function PipelinePage() {
               dragging={!!activeId}
               isSource={active?.stage === 'perdu'}
               renderCard={(c) => (
-                <DraggableCard key={c.id} client={c} sites={sitesIndex.data?.get(c.id)} ownerName={isAdmin ? ownerName.get(c.owner_id ?? '') : undefined} onOpen={() => navigate(`/clients/${c.id}`)} />
+                <DraggableCard key={c.id} client={c} sites={sitesIndex.data?.get(c.id)} ownerName={isAdmin ? ownerName.get(c.owner_id ?? '') : undefined} onOpen={() => actions.openClientSheet(c.id)} />
               )}
             />
           </motion.div>
@@ -363,6 +345,7 @@ function DraggableCard({ client, sites, task, ownerName, stalling, onOpen }: { c
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({ id: client.id })
   return (
     <motion.div layout="position" layoutId={`card-${client.id}`} transition={spring.smooth}>
+      <ClientContextMenu client={client}>
       <PipelineCard
         ref={setNodeRef}
         {...attributes}
@@ -380,6 +363,7 @@ function DraggableCard({ client, sites, task, ownerName, stalling, onOpen }: { c
           if (e.key === 'Enter') onOpen()
         }}
       />
+      </ClientContextMenu>
     </motion.div>
   )
 }

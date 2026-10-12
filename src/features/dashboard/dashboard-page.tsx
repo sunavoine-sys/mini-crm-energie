@@ -19,6 +19,8 @@ import { StageDot } from '@/components/app/stage-badge'
 import { useAuth } from '@/features/auth/auth-context'
 import { useClients, useProfiles, useStageDelays } from '@/features/clients/api'
 import { useOpenTasks } from '@/features/tasks/api'
+import { useAppActions } from '@/app/app-context'
+import { ClientContextMenu } from '@/features/clients/client-context-menu'
 import { useCommissions, useDeals, useRenewals, useSupplierPayments } from './api'
 
 const eur0 = (n: number) => formatEur(Math.round(n))
@@ -438,17 +440,20 @@ function ListHeader({ icon, title, count, to }: { icon: typeof Coins; title: str
 }
 
 function ClientLine({ client, sub, right }: { client: Client; sub?: string; right: React.ReactNode }) {
+  const actions = useAppActions()
   return (
     <li>
-      <Link to={`/clients/${client.id}`} className="group flex items-center gap-3 rounded-md px-2 py-2 transition-colors hover:bg-accent/60">
-        <StageDot stage={client.stage} />
-        <span className="min-w-0 flex-1">
-          <span className="block truncate text-[13px] font-medium">{client.company || 'Sans nom'}</span>
-          <span className="block truncate text-[11px] text-muted-foreground">{sub ?? stageOf(client.stage).label}</span>
-        </span>
-        {right}
-        <ChevronRight className="size-3.5 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100" />
-      </Link>
+      <ClientContextMenu client={client}>
+        <button onClick={() => actions.openClientSheet(client.id)} className="group flex w-full items-center gap-3 rounded-md px-2 py-2 text-left transition-colors outline-none hover:bg-accent/60 focus-visible:bg-accent/60">
+          <StageDot stage={client.stage} />
+          <span className="min-w-0 flex-1">
+            <span className="block truncate text-[13px] font-medium">{client.company || 'Sans nom'}</span>
+            <span className="block truncate text-[11px] text-muted-foreground">{sub ?? stageOf(client.stage).label}</span>
+          </span>
+          {right}
+          <ChevronRight className="size-3.5 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100" />
+        </button>
+      </ClientContextMenu>
     </li>
   )
 }

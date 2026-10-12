@@ -3,9 +3,8 @@ import { useLocation, useNavigate } from 'react-router'
 import { AnimatePresence, motion } from 'motion/react'
 import { ArrowLeft, ArrowRightLeft, Building2, Clock, Keyboard, LogOut, Monitor, Moon, Pencil, Plus, Sun } from 'lucide-react'
 import { Dialog as DialogPrimitive } from 'radix-ui'
-import { toast } from 'sonner'
 import type { Client, StageId } from '@/lib/types'
-import { STAGES, stageOf } from '@/lib/stages'
+import { STAGES } from '@/lib/stages'
 import { contactName } from '@/lib/format'
 import { readRecents } from '@/lib/recents'
 import { MOD } from '@/lib/platform'
@@ -16,12 +15,11 @@ import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, Command
 import { Kbd } from '@/components/ui/kbd'
 import { StageBadge } from '@/components/app/stage-badge'
 import { useAuth } from '@/features/auth/auth-context'
-import { useClients, useUpdateStage } from '@/features/clients/api'
+import { useClients } from '@/features/clients/api'
+import { useStageChange } from '@/features/clients/use-stage-change'
 import { NAV_ITEMS } from './nav'
 
 export type CommandPage = { type: 'root' } | { type: 'stage'; client: Client }
-
-const CELEBRATION: Partial<Record<StageId, string>> = { signe: 'Contrat signé ! 🎉', offre: 'Offre placée 🚀', acd: 'ACD signé ✍️' }
 
 interface CommandMenuProps {
   open: boolean
@@ -39,7 +37,7 @@ export function CommandMenu({ open, onOpenChange, initialPage, activeClient, onN
   const { signOut } = useAuth()
   const { setTheme } = useTheme()
   const { data: clients } = useClients()
-  const updateStage = useUpdateStage()
+  const stageChange = useStageChange()
   const [page, setPage] = useState<CommandPage>(initialPage)
   const [search, setSearch] = useState('')
   const [selected, setSelected] = useState('')
@@ -73,14 +71,7 @@ export function CommandMenu({ open, onOpenChange, initialPage, activeClient, onN
 
   function changeStage(c: Client, stage: StageId) {
     close()
-    if (stage === c.stage) return
-    updateStage.mutate(
-      { id: c.id, stage },
-      {
-        onSuccess: () => toast.success(CELEBRATION[stage] ?? `Étape : ${stageOf(stage).label}`, { description: c.company ?? undefined }),
-        onError: (e) => toast.error("Impossible de changer l'étape", { description: e.message }),
-      },
-    )
+    stageChange(c, stage)
   }
 
   function onKeyDown(e: React.KeyboardEvent) {

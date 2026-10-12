@@ -1,9 +1,8 @@
 import { ChevronDown } from 'lucide-react'
-import { toast } from 'sonner'
 import { STAGES, stageOf } from '@/lib/stages'
 import type { Client, StageId } from '@/lib/types'
 import { cn } from '@/lib/utils'
-import { useUpdateStage } from '@/features/clients/api'
+import { useStageChange } from '@/features/clients/use-stage-change'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -14,30 +13,12 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 
-const CELEBRATION: Partial<Record<StageId, string>> = {
-  signe: 'Contrat signé ! 🎉',
-  acd: 'ACD signé — on passe à la cotation ✍️',
-  offre: 'Offre placée 🚀',
-}
-
 export function StageMenu({ client }: { client: Client }) {
-  const update = useUpdateStage()
+  const changeStage = useStageChange()
   const current = stageOf(client.stage)
 
   function change(value: string) {
-    const stage = value as StageId
-    if (stage === client.stage) return
-    const label = client.company ?? 'Dossier'
-    update.mutate(
-      { id: client.id, stage },
-      {
-        onSuccess: () =>
-          toast.success(CELEBRATION[stage] ?? `Étape : ${stageOf(stage).label}`, {
-            description: stage === 'signe' || stage === 'perdu' ? `${label} · les actions ouvertes ont été clôturées.` : label,
-          }),
-        onError: (e) => toast.error("Impossible de changer l'étape", { description: e.message }),
-      },
-    )
+    changeStage(client, value as StageId)
   }
 
   return (

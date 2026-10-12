@@ -7,6 +7,8 @@ export interface AppActions {
   /** Ouvre la palette ⌘K, éventuellement directement sur le choix d'étape d'un client. */
   openCommand: (opts?: { stageFor?: Client }) => void
   openShortcuts: () => void
+  /** Aperçu d'un dossier dans le panneau latéral, sans quitter la vue courante. */
+  openClientSheet: (clientId: string) => void
   /** Une page peut capter « / » pour focaliser sa propre recherche. */
   registerSearch: (focus: (() => void) | null) => void
 }

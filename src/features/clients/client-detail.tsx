@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { motion } from 'motion/react'
-import { ArrowLeft, Building2, CalendarClock, Copy, Euro, FileText, Hourglass, Mail, MapPin, MoreHorizontal, Pencil, Phone, ScrollText, Trash2, Zap } from 'lucide-react'
+import { ArrowLeft, Building2, Maximize2, CalendarClock, Copy, Euro, FileText, Hourglass, Mail, MapPin, MoreHorizontal, Pencil, Phone, ScrollText, Trash2, Zap } from 'lucide-react'
 import { toast } from 'sonner'
 import type { Client } from '@/lib/types'
 import { contactName, daysFromToday, formatDay, formatEur, formatRelativeDay } from '@/lib/format'
@@ -28,9 +28,11 @@ interface ClientDetailProps {
   onEdit: () => void
   onDeleted: () => void
   onBack?: () => void
+  /** Variante panneau latéral : bouton « Ouvrir la fiche » au lieu du retour */
+  onExpand?: () => void
 }
 
-export function ClientDetail({ client: c, sites, onEdit, onDeleted, onBack }: ClientDetailProps) {
+export function ClientDetail({ client: c, sites, onEdit, onDeleted, onBack, onExpand }: ClientDetailProps) {
   const [tab, setTab] = useState<Tab>('sites')
   const [confirmDelete, setConfirmDelete] = useState(false)
   const del = useDeleteClient()
@@ -47,7 +49,8 @@ export function ClientDetail({ client: c, sites, onEdit, onDeleted, onBack }: Cl
   }
 
   return (
-    <motion.div key={c.id} variants={stagger(0.04)} initial="hidden" animate="show" className="mx-auto w-full max-w-5xl space-y-5 px-4 py-5 sm:px-6 lg:py-6">
+    <div className="@container">
+    <motion.div key={c.id} variants={stagger(0.04)} initial="hidden" animate="show" className="mx-auto w-full max-w-5xl space-y-5 px-4 py-5 @xl:px-6 @3xl:py-6">
       {/* En-tête */}
       <motion.header variants={fadeUp} className="flex flex-wrap items-start justify-between gap-4">
         <div className="flex min-w-0 items-start gap-3">
@@ -79,6 +82,16 @@ export function ClientDetail({ client: c, sites, onEdit, onDeleted, onBack }: Cl
         </div>
         <div className="flex items-center gap-2">
           <StageMenu client={c} />
+          {onExpand && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button size="icon-sm" variant="outline" onClick={onExpand} aria-label="Ouvrir la fiche complète">
+                  <Maximize2 />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>Ouvrir la fiche complète</TooltipContent>
+            </Tooltip>
+          )}
           <Button size="sm" variant="outline" onClick={onEdit}>
             <Pencil /> Modifier
           </Button>
@@ -109,7 +122,7 @@ export function ClientDetail({ client: c, sites, onEdit, onDeleted, onBack }: Cl
       </motion.header>
 
       {/* Bento */}
-      <motion.div variants={fadeUp} className="grid grid-cols-2 gap-3 md:grid-cols-4">
+      <motion.div variants={fadeUp} className="grid grid-cols-2 gap-3 @3xl:grid-cols-4">
         <Tile icon={Hourglass} label="Dans l'étape" tone={stalling ? 'warn' : undefined}>
           <span className="tabular">{daysInStage === 0 ? "Aujourd'hui" : `${daysInStage} j`}</span>
           <TileSub>{stalling ? `Stagne · relance conseillée après ${delay} j` : stageOf(c.stage).label}</TileSub>
@@ -193,6 +206,7 @@ export function ClientDetail({ client: c, sites, onEdit, onDeleted, onBack }: Cl
         }
       />
     </motion.div>
+    </div>
   )
 }
 

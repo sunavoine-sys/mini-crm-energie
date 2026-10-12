@@ -40,7 +40,7 @@ export function SiteList({ clientId }: { clientId: string }) {
       </div>
 
       {isLoading ? (
-        <div className="grid gap-3 md:grid-cols-2">
+        <div className="grid gap-3 @2xl:grid-cols-2">
           {[0, 1].map((i) => (
             <div key={i} className="space-y-3 rounded-xl border border-border bg-card p-4">
               <Skeleton className="h-4 w-1/2" />
@@ -64,7 +64,7 @@ export function SiteList({ clientId }: { clientId: string }) {
           />
         </div>
       ) : (
-        <motion.div layout className="grid gap-3 md:grid-cols-2">
+        <motion.div layout className="grid gap-3 @2xl:grid-cols-2">
           <AnimatePresence initial={false}>
             {sites.map((s) => (
               <SiteCard key={s.id} site={s} onEdit={() => openForm(s)} onDelete={() => setToDelete(s)} />

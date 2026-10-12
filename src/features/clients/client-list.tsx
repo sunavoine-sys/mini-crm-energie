@@ -12,6 +12,7 @@ import { Kbd } from '@/components/ui/kbd'
 import { Skeleton } from '@/components/ui/skeleton'
 import { StageDot } from '@/components/app/stage-badge'
 import type { SiteSummary } from './api'
+import { ClientContextMenu } from './client-context-menu'
 
 export type StageFilter = 'all' | 'active' | StageId
 
@@ -182,6 +183,7 @@ const ClientRow = forwardRef<HTMLLIElement, {
       exit={{ opacity: 0, scale: 0.98 }}
       transition={spring.snappy}
     >
+      <ClientContextMenu client={c} hidePreview>
       <button
         role="option"
         aria-selected={selected}
@@ -210,6 +212,7 @@ const ClientRow = forwardRef<HTMLLIElement, {
           )}
         </div>
       </button>
+      </ClientContextMenu>
     </motion.li>
   )
 })
