@@ -1,4 +1,4 @@
-import { CalendarDays, Users, type LucideIcon } from 'lucide-react'
+import { CalendarDays, LayoutDashboard, Users, type LucideIcon } from 'lucide-react'
 
 export interface NavItem {
   to: string
@@ -9,6 +9,7 @@ export interface NavItem {
 }
 
 export const NAV_ITEMS: NavItem[] = [
+  { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard, key: 'd' },
   { to: '/clients', label: 'Clients', icon: Users, key: 'c' },
   { to: '/agenda', label: 'Agenda', icon: CalendarDays, key: 'a' },
 ]

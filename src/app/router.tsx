@@ -8,7 +8,8 @@ export const router = createBrowserRouter([
     element: <AppShell />,
     HydrateFallback: RouteFallback,
     children: [
-      { index: true, element: <Navigate to="/clients" replace /> },
+      { index: true, element: <Navigate to="/dashboard" replace /> },
+      { path: 'dashboard', lazy: async () => ({ Component: (await import('@/features/dashboard/dashboard-page')).DashboardPage }) },
       { path: 'clients/:clientId?', lazy: async () => ({ Component: (await import('@/features/clients/clients-workspace')).ClientsWorkspace }) },
       { path: 'agenda', lazy: async () => ({ Component: (await import('@/features/tasks/agenda-page')).AgendaPage }) },
       { path: '*', element: <Navigate to="/" replace /> },
