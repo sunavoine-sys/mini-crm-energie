@@ -205,8 +205,8 @@ export function DashboardPage() {
           <Card className="sm:col-span-2 lg:col-span-5" loading={clients.isPending}>
             <div className="mb-4 flex items-center justify-between">
               <CardLabel icon={Zap}>Pipeline</CardLabel>
-              <Link to="/clients" className="text-xs text-muted-foreground hover:text-foreground">
-                Voir les dossiers →
+              <Link to="/pipeline" className="text-xs text-muted-foreground hover:text-foreground">
+                Ouvrir le pipeline →
               </Link>
             </div>
             <BarList
@@ -219,7 +219,7 @@ export function DashboardPage() {
                     <span className="truncate">{stage.label}</span>
                   </>
                 ),
-                onClick: () => navigate('/clients'),
+                onClick: () => navigate('/pipeline'),
               }))}
             />
           </Card>

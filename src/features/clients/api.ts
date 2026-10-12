@@ -90,8 +90,9 @@ export function useSaveClient() {
 export function useUpdateStage() {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: async ({ id, stage }: { id: string; stage: StageId }) => {
-      const { data, error } = await supabase.from('crm_clients').update({ stage }).eq('id', id).select(CLIENT_COLUMNS).single()
+    mutationFn: async ({ id, stage, lost_reason }: { id: string; stage: StageId; lost_reason?: string | null }) => {
+      const patch = lost_reason !== undefined ? { stage, lost_reason } : { stage }
+      const { data, error } = await supabase.from('crm_clients').update(patch).eq('id', id).select(CLIENT_COLUMNS).single()
       if (error) throw error
       return data as Client
     },
