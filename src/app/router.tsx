@@ -13,6 +13,7 @@ export const router = createBrowserRouter([
       { path: 'pipeline', lazy: async () => ({ Component: (await import('@/features/pipeline/pipeline-page')).PipelinePage }) },
       { path: 'clients/:clientId?', lazy: async () => ({ Component: (await import('@/features/clients/clients-workspace')).ClientsWorkspace }) },
       { path: 'agenda', lazy: async () => ({ Component: (await import('@/features/tasks/agenda-page')).AgendaPage }) },
+      { path: 'ventes', lazy: async () => ({ Component: (await import('@/features/sales/sales-page')).SalesPage }) },
       { path: '*', element: <Navigate to="/" replace /> },
     ],
   },
